@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz de Repaso AI</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Lato:wght@400;700;900&family=IBM+Plex+Mono:wght@500;700&display=swap">
+<style>
+  [hidden]{display:none!important;}
+  :root{
+    --bg:#0E1B2A; --panel:#16273B; --linea:#2A3E55;
+    --tinta:#F2EDE3; --tinta2:#A8B4C2; --oro:#C89A45; --teal:#159B94;
+    --opA:#B0523F; --opB:#0E7C7B; --opC:#C89A45; --opD:#4A7FB5;
+    --ok:#3E9B6C; --mal:#C05A48;
+  }
+  body{background:#0E1B2A;color:#F2EDE3;font-family:Lato,system-ui,sans-serif;
+       margin:0;min-height:100vh;font-size:16px;}
+  .wrap{max-width:1060px;margin:0 auto;padding:20px 18px 120px;}
+  h1,h2,.serif{font-family:"Source Serif 4",Georgia,serif;}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace;}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#A8B4C2;font-weight:700;}
+  .marca{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+         border-bottom:1px solid #2A3E55;padding-bottom:12px;margin-bottom:22px;flex-wrap:wrap;}
+  .marca h1{font-size:20px;margin:0;font-weight:600;}
+  .marca .eyebrow{margin:0;}
+  .panel{background:#16273B;border:1px solid #2A3E55;border-radius:10px;padding:22px;}
+  button{font-family:Lato,system-ui,sans-serif;font-weight:700;border:0;border-radius:8px;
+         cursor:pointer;font-size:16px;}
+  button:focus-visible{outline:3px solid #C89A45;outline-offset:2px;}
+  .btn{background:#159B94;color:#06121E;padding:12px 22px;}
+  .btn.sec{background:transparent;color:#F2EDE3;border:1px solid #2A3E55;}
+  .btn.oro{background:#C89A45;color:#06121E;}
+  .btn:disabled{opacity:.45;cursor:default;}
+
+  /* entrada */
+  .apodo-caja{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:18px 0;}
+  .apodo{font-family:"Source Serif 4",serif;font-size:30px;color:#C89A45;}
+
+  /* lobby */
+  .fichas{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;}
+  .ficha{background:#0E1B2A;border:1px solid #2A3E55;border-radius:999px;padding:6px 14px;font-size:14px;}
+  .num-grande{font-family:"IBM Plex Mono",monospace;font-size:56px;font-weight:700;color:#159B94;line-height:1;}
+
+  /* pregunta */
+  .qbarra{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:14px;}
+  .qnum{font-family:"IBM Plex Mono",monospace;color:#A8B4C2;font-size:14px;}
+  .reloj{font-family:"IBM Plex Mono",monospace;font-size:30px;font-weight:700;color:#C89A45;
+         min-width:74px;text-align:right;font-variant-numeric:tabular-nums;}
+  .qtexto{font-family:"Source Serif 4",serif;font-size:clamp(22px,3.6vw,34px);font-weight:600;
+          line-height:1.25;text-wrap:balance;margin:6px 0 22px;}
+  .tiempo-pista{height:6px;background:#0E1B2A;border-radius:3px;overflow:hidden;margin-bottom:22px;}
+  .tiempo-barra{height:100%;background:#C89A45;width:100%;}
+  .ops{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:640px){.ops{grid-template-columns:1fr;}}
+  .op{display:flex;align-items:center;gap:12px;text-align:left;padding:16px;border-radius:10px;
+      color:#fff;font-size:17px;line-height:1.3;min-height:64px;}
+  .op .forma{font-size:20px;flex:none;width:26px;text-align:center;}
+  .op[data-i="0"]{background:#B0523F;} .op[data-i="1"]{background:#0E7C7B;}
+  .op[data-i="2"]{background:#C89A45;color:#06121E;} .op[data-i="3"]{background:#4A7FB5;}
+  .op.apagada{opacity:.32;} .op.elegida{outline:3px solid #F2EDE3;outline-offset:2px;}
+  .op.correcta-marco{outline:4px solid #F2EDE3;outline-offset:3px;}
+  .estado-resp{margin-top:18px;font-size:15px;color:#A8B4C2;}
+
+  /* revelación */
+  .dist{display:grid;gap:10px;margin:20px 0 6px;}
+  .dist-fila{display:grid;grid-template-columns:30px 1fr 56px;gap:10px;align-items:center;}
+  .dist-pista{height:30px;background:#0E1B2A;border-radius:6px;overflow:hidden;}
+  .dist-barra{height:100%;border-radius:6px;min-width:2px;}
+  .dist-n{font-family:"IBM Plex Mono",monospace;text-align:right;font-variant-numeric:tabular-nums;}
+  .veredicto{font-family:"Source Serif 4",serif;font-size:34px;margin:8px 0 4px;}
+  .veredicto.ok{color:#3E9B6C;} .veredicto.mal{color:#C05A48;}
+  .puntos{font-family:"IBM Plex Mono",monospace;font-size:18px;color:#C89A45;}
+  .nota-debrief{border-left:3px solid #159B94;padding:10px 14px;background:#0E1B2A;border-radius:0 8px 8px 0;
+                margin-top:18px;color:#D9DFE6;font-size:15px;line-height:1.5;}
+
+  /* tablas / podio */
+  table{border-collapse:collapse;width:100%;margin-top:14px;}
+  th{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#A8B4C2;text-align:left;
+     padding:8px 10px;border-bottom:1px solid #2A3E55;}
+  td{padding:9px 10px;border-bottom:1px solid #22354A;font-size:15px;}
+  td.n{font-family:"IBM Plex Mono",monospace;text-align:right;font-variant-numeric:tabular-nums;}
+  .podio{display:flex;gap:14px;align-items:flex-end;justify-content:center;margin:26px 0 10px;flex-wrap:wrap;}
+  .pod{background:#16273B;border:1px solid #2A3E55;border-radius:10px 10px 0 0;padding:16px 18px 12px;
+       text-align:center;min-width:150px;}
+  .pod .lugar{font-family:"IBM Plex Mono",monospace;color:#A8B4C2;font-size:13px;}
+  .pod .nombre{font-family:"Source Serif 4",serif;font-size:20px;margin:6px 0;color:#F2EDE3;}
+  .pod .pts{font-family:"IBM Plex Mono",monospace;color:#C89A45;}
+  .pod.p1{border-color:#C89A45;padding-bottom:34px;} .pod.p2{padding-bottom:22px;}
+
+  /* barra del presentador */
+  .hostbar{position:fixed;left:0;right:0;bottom:0;background:#0A1420;border-top:2px solid #C89A45;
+           padding:12px 18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;z-index:5;}
+  .hostbar .tag{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#C89A45;font-weight:900;}
+  .hostbar .info{color:#A8B4C2;font-size:14px;margin-left:auto;font-family:"IBM Plex Mono",monospace;}
+  .aviso{color:#A8B4C2;font-size:14px;line-height:1.5;}
+  .centrado{text-align:center;}
+  [hidden]{display:none!important;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="marca">
+    <h1>Quiz de Repaso AI</h1>
+    <span class="eyebrow">Sesión 1 · Programa de adopción de AI · Azzule</span>
+  </div>
+
+  <!-- sin conexión -->
+  <div id="sinDb" class="panel centrado" hidden>
+    <h2>No se pudo conectar</h2>
+    <p class="aviso">Recarga la página o revisa tu conexión. Si el problema sigue, avísale a Jonathan.</p>
+  </div>
+
+  <!-- entrada -->
+  <div id="scrEntrada" class="panel" hidden>
+    <p class="eyebrow">Tu apodo para jugar</p>
+    <div class="apodo-caja">
+      <span class="apodo" id="apodoTxt">—</span>
+      <button class="btn sec" id="btnOtroApodo">Otro apodo</button>
+    </div>
+    <p class="aviso">El juego es anónimo: nadie sabrá quién es quién y los resultados se leen solo en conjunto, por tema. Nada de esto evalúa a nadie.</p>
+    <p style="margin-top:18px"><button class="btn" id="btnEntrar">Entrar al juego</button></p>
+  </div>
+
+  <!-- lobby -->
+  <div id="scrLobby" class="panel" hidden>
+    <p class="eyebrow">Sala abierta</p>
+    <h2 style="margin:8px 0 2px">Esperando a que arranque la primera pregunta…</h2>
+    <p><span class="num-grande" id="lobbyN">0</span> <span class="aviso">dentro</span></p>
+    <div class="fichas" id="lobbyFichas"></div>
+  </div>
+
+  <!-- esperando (sin sala) -->
+  <div id="scrEspera" class="panel centrado" hidden>
+    <h2>Aún no abre la sala</h2>
+    <p class="aviso">Quédate en esta página: en cuanto Jonathan abra el juego, aparecerá aquí.</p>
+  </div>
+
+  <!-- pregunta -->
+  <div id="scrPregunta" hidden>
+    <div class="qbarra">
+      <span class="qnum" id="qNum">Pregunta 1 de 12</span>
+      <span class="reloj" id="reloj">20</span>
+    </div>
+    <div class="tiempo-pista"><div class="tiempo-barra" id="relojBarra"></div></div>
+    <div class="qtexto" id="qTexto"></div>
+    <div class="ops" id="qOps"></div>
+    <div class="estado-resp" id="qEstado"></div>
+  </div>
+
+  <!-- revelación -->
+  <div id="scrRevela" hidden>
+    <div class="qbarra"><span class="qnum" id="rNum"></span></div>
+    <div class="qtexto" id="rTexto"></div>
+    <div id="rPersonal" hidden>
+      <div class="veredicto" id="rVeredicto"></div>
+      <div class="puntos" id="rPuntos"></div>
+    </div>
+    <div id="rDist" class="dist"></div>
+    <p class="aviso" id="rResumen"></p>
+    <div class="nota-debrief" id="rNota" hidden></div>
+  </div>
+
+  <!-- podio -->
+  <div id="scrPodio" hidden>
+    <h2 class="centrado serif" style="font-size:34px;margin:10px 0 0">Podio</h2>
+    <div class="podio" id="podio"></div>
+    <div id="miTotal" class="centrado aviso" hidden></div>
+    <div id="fallosPanel" class="panel" style="margin-top:22px" hidden>
+      <p class="eyebrow">Para el repaso: las más falladas</p>
+      <table><thead><tr><th>#</th><th>Pregunta</th><th style="text-align:right">Acierto</th></tr></thead>
+      <tbody id="fallosTabla"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- barra del presentador -->
+<div class="hostbar" id="hostbar" hidden>
+  <span class="tag">Presentador</span>
+  <button class="btn oro" id="hAccion">Abrir sala</button>
+  <button class="btn sec" id="hNueva" hidden>Nueva ronda</button>
+  <span class="info" id="hInfo"></span>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+(async function(){
+  "use strict";
+
+  // === CONFIGURACIÓN (pegar la de tu proyecto de Firebase) ===
+  var FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDVKJtKzf4UKWr4AC7AHEKXqafybBEdY9I",
+    authDomain: "azzulq-quiz-claude-1.firebaseapp.com",
+    projectId: "azzulq-quiz-claude-1",
+    storageBucket: "azzulq-quiz-claude-1.firebasestorage.app",
+    messagingSenderId: "157475829766",
+    appId: "1:157475829766:web:0c2827104bca8f93f1eb87"
+  };
+  // Clave del presentador: abre la página con #presentador-clave al final de la URL.
+  var CLAVE_HOST = "presentador-az26x";
+  var $ = function(id){ return document.getElementById(id); };
+
+  // ---------- banco de preguntas ----------
+  var PREG = [
+    {t:"¿Para qué sirve el archivo CLAUDE.md en un proyecto?", s:20, ops:[
+      "Guardar el historial de conversaciones","Dar contexto y reglas que Claude carga en cada sesión",
+      "Configurar las credenciales del repositorio","Definir qué modelo se va a usar"],
+      nota:"Es la memoria del proyecto: convenciones, comandos, arquitectura. Base del Autoguiado 1."},
+    {t:"¿Qué hace el modo Plan antes de tocar tu código?", s:20, ops:[
+      "Ejecuta los cambios más rápido","Propone un plan que apruebas antes de editar",
+      "Crea una rama nueva automáticamente","Desactiva los permisos"],
+      nota:"Shift+tab para alternar. En tareas de varios archivos, planear primero ahorra retrabajo."},
+    {t:"Terminaste una tarea y vas a empezar otra sin relación. ¿Qué comando conviene?", s:20, ops:[
+      "/clear","/compact","/init","/export"],
+      nota:"/clear limpia para empezar fresco; /compact conserva un resumen para seguir en lo mismo."},
+    {t:"¿Qué es un subagente en Claude Code?", s:20, ops:[
+      "Un segundo modelo más barato","Una instancia con contexto propio para tareas delegadas",
+      "Un usuario adicional de la licencia","Un plugin del IDE"],
+      nota:"Delega búsquedas o verificaciones sin contaminar tu contexto principal. Se verá en la Sesión 2."},
+    {t:"¿Qué es una skill?", s:20, ops:[
+      "Un atajo de teclado","Instrucciones empaquetadas que Claude carga cuando aplican",
+      "Un certificado del curso","Una métrica de desempeño"],
+      nota:"Conocimiento repetible en una carpeta. Habrá guía por Teams; no hay que dominarlas hoy."},
+    {t:"¿Para qué sirve MCP (Model Context Protocol)?", s:20, ops:[
+      "Conectar a Claude con herramientas y datos externos","Medir el consumo de tokens",
+      "Cifrar las conversaciones","Entrenar modelos propios"],
+      nota:"El conector estándar: bases de datos, documentación, servicios. Es el Autoguiado 2."},
+    {t:"Antes de ejecutar un comando o editar archivos, Claude Code…", s:20, ops:[
+      "Lo hace sin avisar","Pide permiso, salvo que ya lo hayas permitido",
+      "Requiere doble aprobación del líder","Solo funciona en modo lectura"],
+      nota:"Los permisos son la red de seguridad; configurarlos bien es parte del framework."},
+    {t:"¿Cuál es la mejor primera instrucción para una tarea compleja?", s:30, ops:[
+      "“Hazlo lo más rápido posible”","Contexto, objetivo y criterios de aceptación claros",
+      "Pedir el código directo, sin explicación","Pegar todo el repositorio en el prompt"],
+      nota:"La calidad de la salida depende de la instrucción. Es el corazón de la sesión de Edgar (7 oct)."},
+    {t:"¿Cómo referencias un archivo específico en tu prompt?", s:20, ops:[
+      "Con @ruta/al/archivo","Copiándolo completo cada vez","Con #include","No se puede"],
+      nota:"@ mete el archivo al contexto sin copiar y pegar; también funciona con carpetas."},
+    {t:"Claude terminó un cambio. ¿Qué toca antes de dar por buena la tarea?", s:20, ops:[
+      "Nada, confiar en el resultado","Revisar el diff y correr las pruebas",
+      "Hacer commit de inmediato","Abrir otra sesión"],
+      nota:"El dev sigue siendo responsable de lo que entrega. La Sesión 4 (21 oct) es de revisar código."},
+    {t:"¿Cuáles son las 4 D de AI Fluency?", s:30, ops:[
+      "Delegación, Descripción, Discernimiento, Diligencia","Datos, Diseño, Desarrollo, Deploy",
+      "Definir, Decidir, Delegar, Documentar","Debug, Deploy, Docs, Demo"],
+      nota:"Marco del curso AI Fluency: qué delegar, describir bien, evaluar con criterio, usar con responsabilidad."},
+    {t:"¿Qué hace /init en un proyecto?", s:20, ops:[
+      "Borra el historial","Genera un CLAUDE.md inicial analizando el repo",
+      "Instala las dependencias","Crea la rama main"],
+      nota:"El punto de partida del Autoguiado 1: correr /init y afinar a mano lo que el repo no cuenta."}
+  ];
+  var ENC = "DDCDDCDDCDCD";
+  function corr(i){ return (ENC.charCodeAt(i) - 65 + 2) % 4; }
+  var FORMAS = ["▲","◆","●","■"];
+  var OPCOL = ["#B0523F","#0E7C7B","#C89A45","#4A7FB5"];
+
+  // ---------- identidad anónima ----------
+  function guarda(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  function lee(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  var cid = lee("quizcid");
+  if(!cid){ cid = "c" + Math.random().toString(36).slice(2,10) + Date.now().toString(36); guarda("quizcid",cid); }
+  var ADJ = ["Veloz","Curioso","Sereno","Astuto","Valiente","Discreto","Radiante","Nocturno","Prudente","Chispeante","Firme","Ligero","Sagaz","Tenaz","Amable","Brillante"];
+  var ANI = ["Halcón","Nutria","Jaguar","Colibrí","Zorro","Tortuga","Búho","Delfín","Lince","Mapache","Cóndor","Ajolote","Coyote","Puma","Abeja","Ballena"];
+  function nuevoApodo(){ return ADJ[Math.floor(Math.random()*ADJ.length)] + " " + ANI[Math.floor(Math.random()*ANI.length)]; }
+  var apodo = lee("quizapodo") || nuevoApodo();
+
+  // ---------- conexión ----------
+  var db = null;
+  try{
+    if(typeof FIREBASE_CONFIG === "string") throw new Error("sin configuración");
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+  }catch(e){}
+  if(!db){ $("sinDb").hidden = false; return; }
+  var estadoRef = db.doc("estado/quiz");
+
+  // ¿presentador? La página abierta con #presentador-clave muestra los controles.
+  var esHost = (location.hash.indexOf(CLAVE_HOST) >= 0);
+
+  // ---------- estado local ----------
+  var estado = null;          // doc estado/quiz
+  var qKey = "";              // ronda+q vigente
+  var localStart = 0;         // cuándo vi arrancar la pregunta
+  var respondida = -1;        // opción elegida en la pregunta vigente
+  var miOk = false, miPts = 0;
+  var relojInt = 0;
+  var unsubResp = null, rondaSub = "";
+  var respuestas = [];        // docs de respuestas de la ronda (todos las leen)
+  var jugadores = [];         // docs de jugadores
+  var unsubJug = null;
+
+  var SCRS = ["scrEntrada","scrLobby","scrEspera","scrPregunta","scrRevela","scrPodio"];
+  function muestra(id){ SCRS.forEach(function(s){ $(s).hidden = (s !== id); }); }
+
+  var dentro = false; // ya escribió su ficha de jugador en esta ronda
+
+  // ---------- suscripciones por ronda ----------
+  function suscribeRonda(r){
+    if(rondaSub === r) return;
+    rondaSub = r;
+    if(unsubResp) unsubResp();
+    if(unsubJug) unsubJug();
+    dentro = false;
+    respuestas = []; jugadores = [];
+    unsubResp = db.collection("rondas/" + r + "/respuestas").limit(1000).onSnapshot(function(s){
+      respuestas = s.docs.filter(function(d){return d.exists;}).map(function(d){return d.data();});
+      pinta();
+    }, function(){});
+    unsubJug = db.collection("rondas/" + r + "/jugadores").limit(500).onSnapshot(function(s){
+      jugadores = s.docs.filter(function(d){return d.exists;}).map(function(d){return d.data();});
+      var mia = jugadores.filter(function(j){ return j.cid === cid; })[0];
+      if(mia){ dentro = true; apodo = mia.apodo; }
+      pinta();
+    }, function(){});
+  }
+
+  // ---------- render ----------
+  function pinta(){
+    if(!estado || !estado.ronda){
+      if(esHost){ muestra("scrEspera"); $("scrEspera").querySelector("h2").textContent = "Abre la sala para empezar"; }
+      else muestra("scrEspera");
+      pintaHost(); return;
+    }
+    suscribeRonda(estado.ronda);
+    var f = estado.fase;
+    if(!esHost && !dentro){ $("apodoTxt").textContent = apodo; muestra("scrEntrada"); pintaHost(); return; }
+    if(f === "lobby"){
+      muestra("scrLobby");
+      $("lobbyN").textContent = jugadores.length;
+      $("lobbyFichas").innerHTML = jugadores.slice(0,60).map(function(j){
+        return '<span class="ficha">' + esc(j.apodo) + '</span>'; }).join("");
+    } else if(f === "pregunta"){
+      pintaPregunta();
+    } else if(f === "revelacion"){
+      pintaRevela();
+    } else if(f === "podio"){
+      pintaPodio();
+    }
+    pintaHost();
+  }
+
+  function esc(s){ var d=document.createElement("div"); d.textContent = String(s==null?"":s); return d.innerHTML; }
+
+  function pintaPregunta(){
+    var q = estado.q, p = PREG[q];
+    var k = estado.ronda + ":" + q;
+    if(k !== qKey){ qKey = k; localStart = Date.now(); respondida = -1; miOk = false; miPts = 0; arrancaReloj(p.s); }
+    muestra("scrPregunta");
+    $("qNum").textContent = "Pregunta " + (q+1) + " de " + PREG.length;
+    $("qTexto").textContent = p.t;
+    var puede = (respondida < 0) && !esHost && quedan() > 0 && dentro;
+    $("qOps").innerHTML = p.ops.map(function(o,i){
+      var cls = "op" + (respondida === i ? " elegida" : (respondida >= 0 ? " apagada" : ""));
+      return '<button class="' + cls + '" data-i="' + i + '"' + (puede ? "" : " disabled") + '>' +
+             '<span class="forma">' + FORMAS[i] + '</span><span>' + esc(o) + '</span></button>';
+    }).join("");
+    Array.prototype.forEach.call($("qOps").children, function(b){
+      b.addEventListener("click", function(){ responde(parseInt(b.getAttribute("data-i"),10)); });
+    });
+    var n = respuestas.filter(function(r){ return r.q === q; }).length;
+    if(esHost) $("qEstado").textContent = n + " de " + jugadores.length + " han respondido";
+    else if(respondida >= 0) $("qEstado").textContent = "Respuesta enviada. Espera la revelación…";
+    else $("qEstado").textContent = "";
+  }
+
+  function quedan(){
+    if(!estado || estado.fase !== "pregunta") return 0;
+    return Math.max(0, PREG[estado.q].s - (Date.now() - localStart)/1000);
+  }
+  function arrancaReloj(s){
+    clearInterval(relojInt);
+    relojInt = setInterval(function(){
+      var r = quedan();
+      $("reloj").textContent = Math.ceil(r);
+      $("relojBarra").style.width = (100*r/s) + "%";
+      if(r <= 0){ clearInterval(relojInt); if(estado && estado.fase==="pregunta") pintaPregunta(); }
+    }, 200);
+  }
+
+  async function responde(i){
+    if(respondida >= 0 || quedan() <= 0) return;
+    respondida = i;
+    var q = estado.q, ms = Date.now() - localStart, p = PREG[q];
+    miOk = (i === corr(q));
+    miPts = miOk ? 100 + Math.round(100 * Math.max(0, 1 - ms/(p.s*1000))) : 0;
+    pintaPregunta();
+    try{
+      await db.doc("rondas/" + estado.ronda + "/respuestas/q" + q + "_" + cid)
+        .set({cid:cid, apodo:apodo, q:q, op:i, ms:ms, ok:miOk, pts:miPts, t:Date.now()});
+    }catch(e){ $("qEstado").textContent = "No se pudo enviar; revisa tu conexión."; respondida = -1; pintaPregunta(); }
+  }
+
+  function pintaRevela(){
+    var q = estado.q, p = PREG[q], c = corr(q);
+    clearInterval(relojInt);
+    muestra("scrRevela");
+    $("rNum").textContent = "Pregunta " + (q+1) + " de " + PREG.length;
+    $("rTexto").textContent = p.t;
+    var del = respuestas.filter(function(r){ return r.q === q; });
+    var tot = del.length || 1;
+    $("rDist").innerHTML = p.ops.map(function(o,i){
+      var n = del.filter(function(r){ return r.op === i; }).length;
+      var w = Math.round(100*n/tot);
+      return '<div class="dist-fila"><span class="forma" style="font-size:18px">' + FORMAS[i] + '</span>' +
+        '<div class="dist-pista"><div class="dist-barra" style="width:' + Math.max(w,2) + '%;background:' + OPCOL[i] +
+        (i===c ? '' : ';opacity:.35') + '"></div></div>' +
+        '<span class="dist-n">' + n + '</span></div>';
+    }).join("");
+    var nOk = del.filter(function(r){ return r.ok; }).length;
+    $("rResumen").textContent = "Correcta: " + FORMAS[c] + " " + p.ops[c] + " — acertó " + nOk + " de " + del.length + ".";
+    if(!esHost && dentro){
+      $("rPersonal").hidden = false;
+      if(respondida < 0){ $("rVeredicto").textContent = "Sin respuesta"; $("rVeredicto").className = "veredicto mal"; $("rPuntos").textContent = ""; }
+      else if(miOk){ $("rVeredicto").textContent = "¡Correcto!"; $("rVeredicto").className = "veredicto ok"; $("rPuntos").textContent = "+" + miPts + " pts"; }
+      else { $("rVeredicto").textContent = "Esta no era"; $("rVeredicto").className = "veredicto mal"; $("rPuntos").textContent = "+0 pts"; }
+    } else { $("rPersonal").hidden = true; }
+    $("rNota").hidden = !esHost;
+    if(esHost) $("rNota").textContent = "Debrief: " + p.nota;
+  }
+
+  function totales(){
+    var m = {};
+    respuestas.forEach(function(r){
+      if(!m[r.cid]) m[r.cid] = {cid:r.cid, apodo:r.apodo, pts:0, ok:0};
+      m[r.cid].pts += (r.pts||0); if(r.ok) m[r.cid].ok++;
+    });
+    return Object.keys(m).map(function(k){ return m[k]; }).sort(function(a,b){ return b.pts - a.pts; });
+  }
+
+  function pintaPodio(){
+    clearInterval(relojInt);
+    muestra("scrPodio");
+    var t = totales();
+    var orden = [1,0,2], cls = ["p2","p1","p3"], lug = ["2.º","1.er","3.er"];
+    $("podio").innerHTML = orden.map(function(ix,j){
+      var x = t[ix]; if(!x) return "";
+      return '<div class="pod ' + cls[j] + '"><div class="lugar">' + lug[j] + ' lugar</div>' +
+        '<div class="nombre">' + esc(x.apodo) + '</div><div class="pts">' + x.pts + ' pts · ' + x.ok + '/' + PREG.length + '</div></div>';
+    }).join("");
+    if(!esHost && dentro){
+      var mi = null, pos = 0;
+      t.forEach(function(x,i){ if(x.cid === cid && mi === null){ mi = x; pos = i+1; } });
+      $("miTotal").hidden = false;
+      $("miTotal").textContent = mi ? ("Tú (" + apodo + "): " + mi.pts + " pts · lugar " + pos + " de " + t.length) : "";
+    }
+    $("fallosPanel").hidden = !esHost;
+    if(esHost){
+      var filas = PREG.map(function(p,i){
+        var del = respuestas.filter(function(r){ return r.q === i; });
+        var pct = del.length ? Math.round(100 * del.filter(function(r){return r.ok;}).length / del.length) : 0;
+        return {i:i, t:p.t, pct:pct, n:del.length};
+      }).sort(function(a,b){ return a.pct - b.pct; });
+      $("fallosTabla").innerHTML = filas.map(function(f){
+        return "<tr><td class='n'>" + (f.i+1) + "</td><td>" + esc(f.t) + "</td><td class='n'>" + f.pct + " %</td></tr>";
+      }).join("");
+    }
+  }
+
+  // ---------- jugador entra ----------
+  $("btnOtroApodo").addEventListener("click", function(){ apodo = nuevoApodo(); $("apodoTxt").textContent = apodo; });
+  $("btnEntrar").addEventListener("click", async function(){
+    guarda("quizapodo", apodo);
+    try{
+      await db.doc("rondas/" + estado.ronda + "/jugadores/" + cid).set({cid:cid, apodo:apodo, t:Date.now()});
+      dentro = true; pinta();
+    }catch(e){ alertaEntrada("No se pudo entrar; intenta de nuevo."); }
+  });
+  function alertaEntrada(msg){ var p = $("scrEntrada").querySelector(".aviso"); p.textContent = msg; }
+
+  // ---------- presentador ----------
+  function pintaHost(){
+    $("hostbar").hidden = !esHost;
+    if(!esHost) return;
+    var b = $("hAccion"), nueva = $("hNueva"), info = $("hInfo");
+    nueva.hidden = true;
+    if(!estado || !estado.ronda){ b.textContent = "Abrir sala"; b.onclick = abrirSala; info.textContent = ""; return; }
+    var f = estado.fase, q = estado.q;
+    if(f === "lobby"){
+      b.textContent = "Lanzar pregunta 1"; b.onclick = function(){ lanza(0); };
+      info.textContent = jugadores.length + " dentro";
+    } else if(f === "pregunta"){
+      var n = respuestas.filter(function(r){ return r.q === q; }).length;
+      b.textContent = "Revelar"; b.onclick = revela;
+      info.textContent = "P" + (q+1) + " · " + n + "/" + jugadores.length + " respuestas";
+    } else if(f === "revelacion"){
+      if(q + 1 < PREG.length){ b.textContent = "Pregunta " + (q+2); b.onclick = function(){ lanza(q+1); }; }
+      else { b.textContent = "Ver podio"; b.onclick = podio; }
+      info.textContent = "P" + (q+1) + " revelada";
+    } else if(f === "podio"){
+      b.textContent = "Cerrar"; b.onclick = function(){}; b.disabled = true;
+      nueva.hidden = false;
+      info.textContent = jugadores.length + " jugaron";
+    }
+    if(f !== "podio") b.disabled = false;
+    $("hNueva").onclick = abrirSala;
+  }
+  async function abrirSala(){
+    var r = "r" + Date.now().toString(36);
+    try{ await estadoRef.set({ronda:r, fase:"lobby", q:-1, t:Date.now()}); }catch(e){}
+  }
+  async function lanza(q){ try{ await estadoRef.set({ronda:estado.ronda, fase:"pregunta", q:q, t:Date.now()}); }catch(e){} }
+  async function revela(){ try{ await estadoRef.set({ronda:estado.ronda, fase:"revelacion", q:estado.q, t:Date.now()}); }catch(e){} }
+  async function podio(){ try{ await estadoRef.set({ronda:estado.ronda, fase:"podio", q:estado.q, t:Date.now()}); }catch(e){} }
+
+  // ---------- arranque ----------
+  estadoRef.onSnapshot(function(s){
+    estado = s.exists ? s.data() : null;
+    pinta();
+  }, function(){ $("sinDb").hidden = false; });
+
+  muestra("scrEspera");
+})();
+</script>
+</body>
+</html>
