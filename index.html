@@ -203,54 +203,88 @@
 
   // ---------- banco de preguntas ----------
   var PREG = [
-    {t:"¿Para qué sirve el archivo CLAUDE.md en un proyecto?", s:20, ops:[
-      "Guardar el historial de conversaciones","Dar contexto y reglas que Claude carga en cada sesión",
-      "Configurar las credenciales del repositorio","Definir qué modelo se va a usar"],
-      nota:"Es la memoria del proyecto: convenciones, comandos, arquitectura. Base del Autoguiado 1."},
-    {t:"¿Qué hace el modo Plan antes de tocar tu código?", s:20, ops:[
-      "Ejecuta los cambios más rápido","Propone un plan que apruebas antes de editar",
-      "Crea una rama nueva automáticamente","Desactiva los permisos"],
-      nota:"Shift+tab para alternar. En tareas de varios archivos, planear primero ahorra retrabajo."},
-    {t:"Terminaste una tarea y vas a empezar otra sin relación. ¿Qué comando conviene?", s:20, ops:[
-      "/clear","/compact","/init","/export"],
-      nota:"/clear limpia para empezar fresco; /compact conserva un resumen para seguir en lo mismo."},
-    {t:"¿Qué es un subagente en Claude Code?", s:20, ops:[
-      "Un segundo modelo más barato","Una instancia con contexto propio para tareas delegadas",
-      "Un usuario adicional de la licencia","Un plugin del IDE"],
-      nota:"Delega búsquedas o verificaciones sin contaminar tu contexto principal. Se verá en la Sesión 2."},
-    {t:"¿Qué es una skill?", s:20, ops:[
-      "Un atajo de teclado","Instrucciones empaquetadas que Claude carga cuando aplican",
-      "Un certificado del curso","Una métrica de desempeño"],
-      nota:"Conocimiento repetible en una carpeta. Habrá guía por Teams; no hay que dominarlas hoy."},
-    {t:"¿Para qué sirve MCP (Model Context Protocol)?", s:20, ops:[
-      "Conectar a Claude con herramientas y datos externos","Medir el consumo de tokens",
-      "Cifrar las conversaciones","Entrenar modelos propios"],
-      nota:"El conector estándar: bases de datos, documentación, servicios. Es el Autoguiado 2."},
-    {t:"Antes de ejecutar un comando o editar archivos, Claude Code…", s:20, ops:[
-      "Lo hace sin avisar","Pide permiso, salvo que ya lo hayas permitido",
-      "Requiere doble aprobación del líder","Solo funciona en modo lectura"],
-      nota:"Los permisos son la red de seguridad; configurarlos bien es parte del framework."},
-    {t:"¿Cuál es la mejor primera instrucción para una tarea compleja?", s:30, ops:[
-      "“Hazlo lo más rápido posible”","Contexto, objetivo y criterios de aceptación claros",
-      "Pedir el código directo, sin explicación","Pegar todo el repositorio en el prompt"],
-      nota:"La calidad de la salida depende de la instrucción. Es el corazón de la sesión de Edgar (7 oct)."},
-    {t:"¿Cómo referencias un archivo específico en tu prompt?", s:20, ops:[
-      "Con @ruta/al/archivo","Copiándolo completo cada vez","Con #include","No se puede"],
-      nota:"@ mete el archivo al contexto sin copiar y pegar; también funciona con carpetas."},
-    {t:"Claude terminó un cambio. ¿Qué toca antes de dar por buena la tarea?", s:20, ops:[
-      "Nada, confiar en el resultado","Revisar el diff y correr las pruebas",
-      "Hacer commit de inmediato","Abrir otra sesión"],
-      nota:"El dev sigue siendo responsable de lo que entrega. La Sesión 4 (21 oct) es de revisar código."},
-    {t:"¿Cuáles son las 4 D de AI Fluency?", s:30, ops:[
-      "Delegación, Descripción, Discernimiento, Diligencia","Datos, Diseño, Desarrollo, Deploy",
-      "Definir, Decidir, Delegar, Documentar","Debug, Deploy, Docs, Demo"],
-      nota:"Marco del curso AI Fluency: qué delegar, describir bien, evaluar con criterio, usar con responsabilidad."},
-    {t:"¿Qué hace /init en un proyecto?", s:20, ops:[
-      "Borra el historial","Genera un CLAUDE.md inicial analizando el repo",
-      "Instala las dependencias","Crea la rama main"],
-      nota:"El punto de partida del Autoguiado 1: correr /init y afinar a mano lo que el repo no cuenta."}
+    {t:"¿Cuál de estas cosas NO conviene poner en el CLAUDE.md?", s:30, ops:[
+      "Los comandos de build y de pruebas del proyecto","Las convenciones de estilo del equipo",
+      "El detalle completo de una tarea que harás una sola vez","Advertencias sobre carpetas que el agente no debe tocar"],
+      nota:"CLAUDE.md se carga en TODAS las sesiones: lo de una sola vez infla el contexto siempre. Eso va en el prompt de esa tarea."},
+    {t:"Sigues en la MISMA tarea, pero la sesión ya carga mucho contexto. ¿Qué comando conviene?", s:20, ops:[
+      "/compact","/clear",
+      "/export","/init"],
+      nota:"/compact resume y sigues con el hilo; /clear era la trampa: borra todo y pierdes el avance de la tarea."},
+    {t:"¿Cuándo se activa una skill?", s:30, ops:[
+      "Solo si la invocas por su nombre exacto","Automáticamente en cada sesión, como CLAUDE.md",
+      "Solo desde la línea de comandos","Cuando Claude juzga que su descripción aplica a la tarea, o la invocas"],
+      nota:"La descripción de la skill es su disparador — por eso escribirla bien importa. CLAUDE.md sí se carga siempre; las skills no."},
+    {t:"¿Qué diferencia a una skill de un servidor MCP?", s:30, ops:[
+      "La skill empaqueta instrucciones y conocimiento; MCP conecta herramientas y datos externos","Son dos nombres para lo mismo",
+      "MCP es solo para bases de datos","Las skills necesitan internet y MCP no"],
+      nota:"Skill = saber hacer (procedimientos, plantillas). MCP = poder alcanzar (BD, docs, servicios). Se complementan."},
+    {t:"¿Cuál es la diferencia clave entre delegar a un subagente y seguir en la sesión principal?", s:30, ops:[
+      "El subagente usa siempre un modelo más barato","El subagente puede editar archivos y la sesión principal no",
+      "El subagente trabaja con contexto propio y solo regresa su resultado","No hay diferencia real, es solo organización"],
+      nota:"El punto es el aislamiento de contexto: explora lo que quiera sin ensuciar tu conversación. El modelo es configurable, no la diferencia."},
+    {t:"¿En cuál de estos casos conviene MÁS delegar a un subagente?", s:30, ops:[
+      "Siempre: es más rápido en todo","Una búsqueda amplia en el repo cuyo detalle no necesitas en tu contexto",
+      "Un cambio puntual en un solo archivo","Cuando quieres conservar todo el detalle en la conversación"],
+      nota:"Delegas cuando la exploración pesa más que la conclusión. Para un cambio puntual, el subagente es puro overhead."},
+    {t:"¿Qué hace realmente el modo Plan?", s:30, ops:[
+      "Explora en solo lectura y te propone un plan que apruebas antes de que edite nada","Genera un diagrama de la arquitectura del proyecto",
+      "Divide la tarea entre varios modelos en paralelo","Hace el trabajo más lento pero más barato"],
+      nota:"Es un candado de solo lectura mientras se acuerda el enfoque. Shift+tab para alternar."},
+    {t:"Vas a atacar un ISR que toca varios archivos. ¿Cuál es el mejor primer paso?", s:20, ops:[
+      "Pedir el código de una vez, para eso está","Crear la rama y hacer commit inicial",
+      "Correr /compact para liberar espacio","Modo Plan: que explore el código y acuerden el enfoque antes de editar"],
+      nota:"En tareas multi-archivo, planear primero ahorra retrabajo. Es el corazón de la sesión de Edgar (7 oct)."},
+    {t:"Claude te propone un diff que se ve bien, pero toca un archivo que no esperabas. ¿Qué haces?", s:20, ops:[
+      "Aceptarlo: el diff se ve bien y él leyó más código que tú","Rechazar todo y empezar la tarea de nuevo",
+      "Preguntarle por qué tocó ese archivo antes de aceptar","Aceptarlo y revisarlo con calma después del commit"],
+      nota:"Un diff que no entiendes no se acepta — y tampoco se tira el trabajo: se pregunta. El dev sigue siendo responsable de lo que entrega."},
+    {t:"¿Cuál es una señal de que tu sesión ya carga demasiado contexto irrelevante?", s:30, ops:[
+      "Respuestas más genéricas, lentas o que mezclan temas de tareas anteriores","El editor de código se pone lento",
+      "Los tokens dejan de contabilizarse","Claude empieza a pedir más permisos"],
+      nota:"El contexto sucio degrada la calidad de las respuestas. /clear entre tareas, /compact dentro de una tarea larga."},
+    {t:"¿Cuál es la práctica correcta con los permisos de Claude Code?", s:30, ops:[
+      "Aceptar todo al inicio de la sesión para no interrumpir el flujo","Nunca dar permisos permanentes, aunque preguntes cien veces",
+      "Desactivarlos en proyectos pequeños","Permitir de forma permanente solo comandos que entiendes y son seguros"],
+      nota:"Ni aceptar a ciegas ni frenarlo todo: criterio. Los permisos del proyecto se pueden compartir en .claude/ — parte del framework."},
+    {t:"¿Para qué sirve el archivo .claude/settings.json de un proyecto?", s:30, ops:[
+      "Guardar el historial de conversaciones del equipo","Definir permisos y configuración del proyecto, compartibles por repo",
+      "Ajustes visuales del editor","Guardar las credenciales del repositorio"],
+      nota:"Configuración versionable del proyecto: permisos, reglas. Lo que un dev configura bien, el equipo lo hereda por el repo."},
+    {t:"¿Qué es cierto sobre referenciar con @ en el prompt?", s:30, ops:[
+      "Solo funciona con archivos de texto plano","Edita directamente el archivo referenciado",
+      "Mete el archivo al contexto; con carpetas incluye su estructura","Solo se puede usar una vez por sesión"],
+      nota:"@ruta/archivo o @carpeta/: contexto preciso sin copiar y pegar."},
+    {t:"Corriste /init y el CLAUDE.md generado trae cosas irrelevantes. ¿Qué haces?", s:20, ops:[
+      "Editarlo a mano: es un documento tuyo, no del agente","Dejarlo así: Claude sabe qué puso y por qué",
+      "Borrarlo y trabajar sin CLAUDE.md","Correr /init otra vez hasta que salga perfecto"],
+      nota:"/init es el borrador, no el resultado. Afinar a mano lo que el repo no cuenta es justo el Autoguiado 1."},
+    {t:"¿Cuándo vale la pena pedirle a Claude que razone más (pensar extendido)?", s:30, ops:[
+      "Siempre: más razonamiento nunca estorba","Nunca: el resultado es idéntico",
+      "Solo funciona en el chat web, no en Claude Code","En problemas difíciles de diseño o debugging; en lo simple solo agrega tiempo y costo"],
+      nota:"El razonamiento extendido es una herramienta con costo: se usa donde el problema lo amerita."},
+    {t:"Dos devs del mismo squad tienen configuraciones distintas. ¿Qué conviene compartir vía repo?", s:20, ops:[
+      "Nada: cada quien su configuración","CLAUDE.md y la configuración de proyecto (.claude/)",
+      "Sus historiales de conversación","Las claves de API"],
+      nota:"Lo que vive en el repo lo hereda todo el squad. Es la semilla del framework de Azzule que iremos armando juntos."},
+    {t:"Claude propone una solución que TÚ ya intentaste y no funcionó. ¿Qué es lo más eficaz?", s:20, ops:[
+      "Repetir la instrucción, ahora en mayúsculas","Abrir otra sesión y pedir exactamente lo mismo",
+      "Decirle qué intentaste, por qué falló, y pedir una alternativa","Cambiar de modelo y reintentar"],
+      nota:"El agente no sabe lo que no le cuentas. Contexto de lo fallido = mejor siguiente propuesta (la D de Descripción)."},
+    {t:"En las 4 D de AI Fluency, ¿qué significa 'Discernimiento'?", s:30, ops:[
+      "Evaluar con criterio propio lo que la AI produce","Saber qué tareas delegar y cuáles no",
+      "Describir bien el contexto y el objetivo","Usar la AI de forma responsable"],
+      nota:"Delegación, Descripción, Discernimiento, Diligencia. Discernir = no comprar la salida sin juzgarla. (Grupo 2: 1 min de contexto.)"},
+    {t:"¿Cuál de estas tareas NO conviene delegarle al agente hoy en Azzule?", s:20, ops:[
+      "Generar pruebas unitarias de un módulo","Explicar un módulo de código legado",
+      "La prueba manual con datos reales de clientes","Redactar documentación técnica interna"],
+      nota:"Datos reales de clientes no entran al agente, y la validación final con ellos sigue siendo humana. Hay cosas que no se automatizan."},
+    {t:"El botón de pulgar arriba/abajo en una respuesta de Claude…", s:30, ops:[
+      "Solo registra una calificación, no envía nada","Envía la conversación completa a Anthropic como retroalimentación",
+      "Borra esa respuesta del historial","Reentrena el modelo con la última respuesta"],
+      nota:"Única excepción al 'no se entrena con nuestros datos' de la licencia corporativa: el feedback voluntario manda la conversación completa. No usarlo si hay algo delicado."}
   ];
-  var ENC = "DDCDDCDDCDCD";
+  var ENC = "ACBCADCBACBDACBDACAD";
   function corr(i){ return (ENC.charCodeAt(i) - 65 + 2) % 4; }
   var FORMAS = ["▲","◆","●","■"];
   var OPCOL = ["#B0523F","#0E7C7B","#C89A45","#4A7FB5"];
@@ -514,3 +548,4 @@
 </script>
 </body>
 </html>
+
