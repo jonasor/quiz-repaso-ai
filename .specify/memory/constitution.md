@@ -1,50 +1,183 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Constitución de Quiz de Repaso AI
+
+Quiz en vivo y multijugador para las sesiones internas del programa de adopción
+de AI de Azzule. Escala objetivo: ~50 jugadores simultáneos por partida.
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Frontera de confianza en las reglas (NO NEGOCIABLE)
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+El navegador de un jugador NUNCA recibe la respuesta correcta antes de la
+revelación, y NUNCA calcula su propio puntaje. Toda invariante del juego DEBE
+hacerse cumplir en `firestore.rules`.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+La interfaz PUEDE deshabilitar un botón por usabilidad, pero NUNCA es la única
+defensa. Criterio de rechazo: si la única razón por la que una acción no se puede
+ejecutar es que la UI no la ofrece, el diseño está mal y DEBE corregirse en las
+reglas. La ofuscación —minificación, codificación, nombres confusos, respuestas
+"escondidas" en el payload— NO cuenta como protección.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Verificable como**: para cada invariante existe una petición construida a mano
+contra el emulador que DEBE ser denegada por las reglas, sin intervención de la UI.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+**Rationale**: el cliente es territorio del jugador. Cualquier dato que llegue al
+navegador se considera público, y cualquier escritura que las reglas permitan se
+considera posible. Un quiz cuya integridad depende de que nadie abra DevTools no
+tiene integridad.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### II. Anonimato irreversible (NO NEGOCIABLE)
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+El sistema NO almacena la identidad real de un jugador y NO DEBE poder derivarla.
+Autenticación anónima, apodos generados por el sistema, cero PII: sin nombres,
+sin correos, sin identificadores corporativos, sin campos de texto libre que
+puedan contenerlos.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+Ningún resultado individual es legible por otro jugador ni por el presentador. El
+presentador ve únicamente agregados por pregunta y un podio de apodos. Las reglas
+DEBEN denegar la lectura de la respuesta de un `uid` ajeno a cualquier
+participante, incluido el presentador.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+**Verificable como**: no existe ruta de lectura, consulta ni unión de documentos
+que produzca el par (persona real, respuesta). El intento DEBE tener un test de
+denegación explícito.
+
+**Rationale**: el quiz refuerza aprendizaje, no evalúa personas. Esa promesa solo
+se sostiene si la arquitectura la hace imposible de romper —incluso para quien
+administra el sistema— y no meramente improbable.
+
+### III. Dominio puro, aislado de Firebase
+
+La lógica de juego —cálculo de puntaje, transiciones de fase, agregación de
+resultados— DEBE vivir en módulos que no importan Firebase. Esos módulos se
+prueban con Vitest sin emulador, sin red y sin credenciales.
+
+La capa de datos SOLO traduce entre documentos de Firestore y los tipos del
+dominio. No DEBE contener reglas de negocio.
+
+**Verificable como**: los módulos de dominio no tienen ningún `import` de
+`firebase/*`, y su suite de tests corre en milisegundos sin ningún proceso
+externo levantado.
+
+**Rationale**: una regla de puntaje que solo se puede probar arrancando el
+emulador se prueba poco. El aislamiento convierte los cambios de reglas de juego
+en ediciones baratas y reversibles.
+
+### IV. Las reglas de seguridad son código probado (NO NEGOCIABLE)
+
+`firestore.rules` NO se modifica sin tests en `@firebase/rules-unit-testing`
+ejecutados contra el emulador. Cada denegación DEBE tener su test explícito de
+"esto DEBE fallar". Como mínimo:
+
+- Leer el documento de soluciones con credenciales de jugador.
+- Escribir la respuesta de otro `uid`.
+- Responder fuera de la fase válida.
+- Responder después del cierre de la pregunta.
+- Responder dos veces la misma pregunta.
+- Incluir campos de puntaje en el payload de una respuesta.
+
+Un PR que toca `firestore.rules` sin tocar sus tests DEBE ser rechazado en
+revisión.
+
+**Verificable como**: el diff de todo PR que modifica `firestore.rules` contiene
+también cambios en el archivo de tests de reglas, y la suite pasa en verde contra
+el emulador.
+
+**Rationale**: las reglas son el único punto donde el Principio I se hace real.
+Una regla sin test es una afirmación sin evidencia, y las reglas de Firestore
+fallan de forma silenciosa: permiten de más sin avisar.
+
+### V. Estado recuperable, acciones idempotentes
+
+Firestore es la única fuente de verdad. Cualquier cliente —jugador o
+presentador— DEBE poder recargar en cualquier momento y reconstruir su estado
+completo a partir de lo que hay en Firestore. No DEBE existir estado de partida
+que viva únicamente en memoria del navegador.
+
+Toda acción del presentador DEBE ser idempotente: ejecutarla dos veces produce el
+mismo resultado que ejecutarla una vez. Esto incluye abrir pregunta, cerrar
+pregunta, revelar respuesta, calificar y avanzar de fase.
+
+**Verificable como**: para cada acción del presentador existe un test que la
+aplica dos veces y afirma que el estado resultante es idéntico. Recargar en
+cualquier fase restituye la vista correcta.
+
+**Rationale**: en vivo, frente a una sala, no hay oportunidad de depurar. Cerrar
+el navegador a media partida DEBE ser una recarga, no una sesión perdida; un
+doble clic nervioso DEBE ser inofensivo.
+
+### VI. Contenido como dato, no como código
+
+Las preguntas son un artefacto de datos versionado que se carga en tiempo de
+ejecución. Las respuestas correctas NUNCA entran al bundle desplegado.
+
+Crear o modificar un quiz NO DEBE requerir recompilar ni redesplegar la
+aplicación.
+
+**Verificable como**: una búsqueda del texto de cualquier respuesta correcta
+sobre los archivos construidos en `dist/` no arroja coincidencias. Publicar un
+quiz nuevo es una operación de datos, no un deploy.
+
+**Rationale**: el ciclo de autoría de contenido debe pertenecer a quien facilita
+la sesión, no al pipeline de build. Además, cualquier respuesta correcta incluida
+en el bundle viola el Principio I en el momento en que el jugador carga la página.
+
+## Restricciones Técnicas
+
+**Stack fijo**: Vite + React + TypeScript. Firebase para Firestore, Auth y
+Hosting. Vitest para dominio; Firebase Emulator Suite para reglas.
+
+**Plan Spark gratuito**: sin Cloud Functions y sin backend propio. En
+consecuencia, el navegador autenticado del presentador actúa como autoridad de
+calificación. Esta es una concesión deliberada a la restricción de plataforma: el
+presentador es el único principal con permiso de escritura sobre puntajes, y ese
+permiso DEBE estar acotado por reglas, no por confianza en la aplicación.
+
+**Autoridad temporal**: los cierres de pregunta y las ventanas de respuesta se
+evalúan con `request.time` del servidor dentro de las reglas. El reloj del cliente
+NUNCA es autoritativo para ninguna decisión del juego.
+
+**Presupuesto operativo**: 0 USD. El diseño DEBE mantenerse dentro de la cuota
+gratuita de Firebase para la escala objetivo de ~50 jugadores simultáneos. Los
+patrones de lectura y escritura DEBEN evaluarse por su costo en operaciones antes
+de adoptarse; los listeners por jugador son el riesgo principal.
+
+## Flujo de Desarrollo
+
+El trabajo sigue Spec Kit en orden: `/speckit-specify` → `/speckit-plan` →
+`/speckit-tasks` → `/speckit-implement`. La especificación captura qué y por qué;
+las decisiones técnicas pertenecen al plan.
+
+**Quality gates antes de fusionar** — los tres DEBEN estar en verde:
+
+1. Tipos sin errores.
+2. Vitest en verde (suite de dominio).
+3. Tests de reglas en verde contra el emulador.
+
+El Firebase Emulator Suite es obligatorio en desarrollo local. Las reglas NUNCA
+se prueban contra producción.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+Esta constitución tiene precedencia sobre cualquier otra práctica, convención o
+preferencia del proyecto. Ante conflicto entre este documento y una decisión de
+plan, spec o revisión, gana este documento.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Cumplimiento**: toda revisión de PR DEBE verificar el cumplimiento de los
+principios aplicables. Los principios marcados NO NEGOCIABLE (I, II y IV) no
+admiten excepción, dispensa temporal ni deuda técnica planificada: un cambio que
+los viole se rechaza, no se agenda. La complejidad añadida DEBE justificarse
+contra el principio que la motiva.
+
+**Enmiendas**: toda modificación a este documento requiere (a) la justificación
+escrita del cambio, (b) el bump de versión correspondiente, y (c) la revisión de
+los artefactos de Spec Kit vigentes que dependan del principio afectado.
+
+**Versionado semántico** de esta constitución:
+
+- **MAJOR**: eliminación o redefinición incompatible de un principio o de una
+  regla de gobernanza.
+- **MINOR**: adición de un principio o sección, o expansión material de una guía
+  existente.
+- **PATCH**: aclaraciones, redacción, correcciones no semánticas.
+
+**Version**: 1.0.0 | **Ratified**: 2026-09-16 | **Last Amended**: 2026-09-16
