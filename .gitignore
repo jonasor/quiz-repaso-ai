@@ -18,3 +18,17 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# --- Firebase ---
+# Logs y caché de la Emulator Suite: ruido local, nunca del proyecto.
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+database-debug.log
+pubsub-debug.log
+*-debug.log
+.firebase/
+
+# --- Node ---
+node_modules/
+dist/

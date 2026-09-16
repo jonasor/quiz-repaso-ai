@@ -96,8 +96,15 @@ una publicación que intentara colar `correctIndex` sería rechazada por el serv
 **Decision**: La ronda guarda `maxParticipants` y `participantCount`. Entrar escribe
 tres documentos en **una sola transacción**: el participante, la reserva de su apodo y
 el incremento del contador. Las reglas atan las tres entre sí con `getAfter()` y
-`existsAfter()`, de modo que ninguna puede ocurrir sin las otras dos. Se activa App
-Check. FR-012 da al presentador la salida de ajustar el tope en curso.
+`existsAfter()`, de modo que ninguna puede ocurrir sin las otras dos. FR-012 da al
+presentador la salida de ajustar el tope de una ronda en curso.
+
+**App Check queda diferido.** Entró en el diseño anterior como mitigación contra la
+fabricación masiva de identidades anónimas, pero esa amenaza la absorbió el contador
+exacto: el cupo ya no se puede rebasar ni ocupar sin entrar. Lo que quedaba era su
+costo —tokens de depuración en el emulador y un proveedor sin decidir— dentro de la fase
+que bloquea todas las historias. Se evalúa en Polish, con el proveedor gratuito del plan
+Spark, y solo si una medición o una prueba en sala muestran que hace falta.
 
 **Rationale**: FR-011 prohíbe reconocer dispositivos o personas, así que la única
 barrera admisible es de cupo agregado. Pero un cupo solo sirve si el contador es fiel, y
@@ -259,4 +266,4 @@ respondí yo.
 1. **La aritmética de timestamps en reglas no está confirmada.** Es el primer spike, y de él depende D1.
 2. **Contención de escritura sobre el contador de la ronda.** El tope dejó de ser blando al atar la entrada con `getAfter()` (D4), pero el contador concentra escrituras en un documento. Hay que medir la entrada en ráfaga contra el emulador y ajustar el retroceso exponencial.
 3. **La corrección del puntaje no la verifica nadie más que el presentador.** Registrado en Complexity Tracking; es concesión sancionada por la constitución.
-4. **App Check en desarrollo local** exige tokens de depuración; conviene resolverlo al montar el entorno para que no bloquee los tests de reglas.
+4. **El alta del presentador y la inyección de `PRESENTER_UID`** no estaban resueltas. `firestore.rules` es un único artefacto que va al emulador y a producción, así que un literal obliga a que los tests usen el mismo `uid` que la cuenta real, o a plantillar las reglas por entorno. Es prerrequisito de toda la suite de reglas del presentador.

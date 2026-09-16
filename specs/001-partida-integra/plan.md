@@ -33,7 +33,7 @@ reglas, y está registrada en Complexity Tracking.
 
 **Language/Version**: TypeScript 5.x, ES2022
 
-**Primary Dependencies**: React 18, Vite 5, Firebase JS SDK 10 (Firestore, Auth, App Check)
+**Primary Dependencies**: React 18, Vite 5, Firebase JS SDK 10 (Firestore, Auth). App Check queda **diferido**: entró como mitigación contra la fabricación masiva de identidades, y el rediseño de la entrada con `getAfter()` absorbió esa amenaza.
 
 **Storage**: Cloud Firestore, plan Spark gratuito. Sin Cloud Functions y sin backend propio.
 
@@ -159,7 +159,7 @@ src/
 │   ├── quizFile.ts          # FR-067, FR-069, FR-070: validación del archivo
 │   └── types.ts
 ├── data/                    # Única capa que conoce Firestore
-│   ├── firebase.ts          # inicialización, Auth anónima, App Check
+│   ├── firebase.ts          # inicialización, Auth anónima
 │   ├── rounds.ts            # lectura y conducción de la ronda
 │   ├── answers.ts           # envío y lectura de respuestas
 │   ├── scores.ts            # escritura de calificación por el presentador
