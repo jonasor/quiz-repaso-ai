@@ -1,0 +1,20 @@
+# --- Claude Code ---
+# Las skills de spec-kit SÍ se versionan (son parte del proyecto).
+# Lo que se ignora es el estado y la config por máquina/usuario.
+.claude/settings.local.json
+.claude/*.local.json
+.claude/.credentials.json
+.claude/history.jsonl
+.claude/todos/
+.claude/shell-snapshots/
+.claude/statsig/
+.claude/projects/
+
+# --- Sistema operativo ---
+.DS_Store
+Thumbs.db
+
+# --- Editores ---
+.vscode/
+.idea/
+*.swp
