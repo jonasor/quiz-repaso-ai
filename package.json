@@ -11,9 +11,10 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "domain:pure": "node scripts/check-domain-purity.mjs",
-    "test:domain": "npm run domain:pure && vitest run --project domain",
+    "test:domain": "npm run domain:pure && node scripts/check-invariants.mjs && vitest run --project domain",
     "test:rules": "vitest run --project rules",
     "emulators": "firebase emulators:start --only firestore,auth",
+    "verify:dist": "npm run build && node scripts/check-dist.mjs",
     "seed": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 tsx scripts/seed-emulator.ts"
   },
   "dependencies": {

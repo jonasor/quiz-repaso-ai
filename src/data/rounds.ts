@@ -245,10 +245,17 @@ export interface JoinOptions {
   readonly onRetry?: (attempt: number) => void;
 }
 
+/**
+ * Calibrado con T051 (scripts/measure-join-burst.ts) contra el emulador. Con los valores
+ * iniciales (12 intentos, 60 ms, 1,5 s) solo 23 de 50 entradas simultáneas lograban
+ * entrar. Con estos entran las 50, el contador queda exacto y ninguna falla. El p95
+ * sigue siendo de ~50 s porque las entradas se serializan sobre un único documento: ver
+ * el riesgo abierto 2 de research.md, pendiente de decisión.
+ */
 export const JOIN_DEFAULTS = {
-  maxAttempts: 12,
-  baseDelayMs: 60,
-  maxDelayMs: 1_500,
+  maxAttempts: 60,
+  baseDelayMs: 500,
+  maxDelayMs: 8_000,
 } as const;
 
 const defaultSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));

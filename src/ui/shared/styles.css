@@ -1,0 +1,459 @@
+/*
+ * Estilos portados del prototipo (index.html original), con la misma paleta y
+ * tipografía. Tokens en :root; el tema es oscuro por diseño, porque se proyecta en sala.
+ */
+:root {
+  --bg: #0e1b2a;
+  --panel: #16273b;
+  --linea: #2a3e55;
+  --tinta: #f2ede3;
+  --tinta2: #a8b4c2;
+  --oro: #c89a45;
+  --teal: #159b94;
+  --opA: #b0523f;
+  --opB: #0e7c7b;
+  --opC: #c89a45;
+  --opD: #4a7fb5;
+  --opE: #7a5ea8;
+  --opF: #5b8a3a;
+  --ok: #3e9b6c;
+  --mal: #c05a48;
+  --fondo-hondo: #0a1420;
+}
+
+* {
+  box-sizing: border-box;
+}
+[hidden] {
+  display: none !important;
+}
+body {
+  background: var(--bg);
+  color: var(--tinta);
+  font-family: Lato, system-ui, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  font-size: 16px;
+}
+.wrap {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 20px 16px 120px;
+}
+h1,
+h2,
+h3,
+.serif {
+  font-family: 'Source Serif 4', Georgia, serif;
+}
+.mono {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tinta2);
+  font-weight: 700;
+  margin: 0;
+}
+.marca {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  border-bottom: 1px solid var(--linea);
+  padding-bottom: 12px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+.marca h1 {
+  font-size: 20px;
+  margin: 0;
+  font-weight: 600;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+  padding: 22px;
+}
+.panel + .panel {
+  margin-top: 16px;
+}
+button,
+input,
+select {
+  font-family: Lato, system-ui, sans-serif;
+  font-size: 16px;
+}
+button {
+  font-weight: 700;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--oro);
+  outline-offset: 2px;
+}
+.btn {
+  background: var(--teal);
+  color: #06121e;
+  padding: 12px 22px;
+}
+.btn.sec {
+  background: transparent;
+  color: var(--tinta);
+  border: 1px solid var(--linea);
+}
+.btn.oro {
+  background: var(--oro);
+  color: #06121e;
+}
+.btn.peligro {
+  background: transparent;
+  color: var(--mal);
+  border: 1px solid var(--mal);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.fila {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.campo {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0;
+}
+.campo input,
+.campo select {
+  background: var(--bg);
+  color: var(--tinta);
+  border: 1px solid var(--linea);
+  border-radius: 8px;
+  padding: 10px 12px;
+  max-width: 420px;
+}
+.aviso {
+  color: var(--tinta2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.error {
+  color: #f0a898;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.centrado {
+  text-align: center;
+}
+
+/* entrada */
+.apodo-caja {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+.apodo {
+  font-family: 'Source Serif 4', serif;
+  font-size: 30px;
+  color: var(--oro);
+}
+.num-grande {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 56px;
+  font-weight: 700;
+  color: var(--teal);
+  line-height: 1;
+}
+
+/* pregunta */
+.qbarra {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.qnum {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--tinta2);
+  font-size: 14px;
+}
+.reloj {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--oro);
+  min-width: 74px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.qtexto {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(22px, 3.6vw, 34px);
+  font-weight: 600;
+  line-height: 1.25;
+  text-wrap: balance;
+  margin: 6px 0 22px;
+}
+.tiempo-pista {
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 22px;
+}
+.tiempo-barra {
+  height: 100%;
+  background: var(--oro);
+}
+.ops {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .ops {
+    grid-template-columns: 1fr;
+  }
+}
+.op {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  padding: 16px;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 17px;
+  line-height: 1.3;
+  min-height: 64px;
+  width: 100%;
+}
+.op .forma {
+  font-size: 20px;
+  flex: none;
+  width: 26px;
+  text-align: center;
+}
+.op[data-i='0'] {
+  background: var(--opA);
+}
+.op[data-i='1'] {
+  background: var(--opB);
+}
+.op[data-i='2'] {
+  background: var(--opC);
+  color: #06121e;
+}
+.op[data-i='3'] {
+  background: var(--opD);
+}
+.op[data-i='4'] {
+  background: var(--opE);
+}
+.op[data-i='5'] {
+  background: var(--opF);
+}
+.op.apagada {
+  opacity: 0.32;
+}
+.op.elegida {
+  outline: 3px solid var(--tinta);
+  outline-offset: 2px;
+}
+.op:disabled {
+  cursor: default;
+}
+.estado-resp {
+  margin-top: 18px;
+  font-size: 15px;
+  color: var(--tinta2);
+  min-height: 1.5em;
+}
+
+/* revelación */
+.dist {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0 6px;
+}
+.dist-fila {
+  display: grid;
+  grid-template-columns: 30px 1fr 56px;
+  gap: 10px;
+  align-items: center;
+}
+.dist-texto {
+  grid-column: 2 / 4;
+  font-size: 14px;
+  color: var(--tinta2);
+  margin-top: -6px;
+}
+.dist-pista {
+  height: 30px;
+  background: var(--bg);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.dist-barra {
+  height: 100%;
+  border-radius: 6px;
+  min-width: 2px;
+}
+.dist-n {
+  font-family: 'IBM Plex Mono', monospace;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.veredicto {
+  font-family: 'Source Serif 4', serif;
+  font-size: 34px;
+  margin: 8px 0 4px;
+}
+.veredicto.ok {
+  color: var(--ok);
+}
+.veredicto.mal {
+  color: var(--mal);
+}
+.puntos {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 18px;
+  color: var(--oro);
+}
+.nota-debrief {
+  border-left: 3px solid var(--teal);
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 0 8px 8px 0;
+  margin-top: 18px;
+  color: #d9dfe6;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* tablas y podio */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 14px;
+}
+th {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tinta2);
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--linea);
+}
+td {
+  padding: 9px 10px;
+  border-bottom: 1px solid #22354a;
+  font-size: 15px;
+  vertical-align: top;
+}
+td.n,
+th.n {
+  font-family: 'IBM Plex Mono', monospace;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.tabla-scroll {
+  overflow-x: auto;
+}
+.podio {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  justify-content: center;
+  margin: 26px 0 10px;
+  flex-wrap: wrap;
+}
+.pod {
+  background: var(--panel);
+  border: 1px solid var(--linea);
+  border-radius: 10px 10px 0 0;
+  padding: 16px 18px 12px;
+  text-align: center;
+  min-width: 150px;
+}
+.pod .lugar {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--tinta2);
+  font-size: 13px;
+}
+.pod .nombre {
+  font-family: 'Source Serif 4', serif;
+  font-size: 20px;
+  margin: 6px 0;
+}
+.pod .pts {
+  font-family: 'IBM Plex Mono', monospace;
+  color: var(--oro);
+}
+.pod.p1 {
+  border-color: var(--oro);
+  padding-bottom: 34px;
+}
+.pod.p2 {
+  padding-bottom: 22px;
+}
+
+/* presentador */
+.pestanas {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.pestanas button {
+  background: transparent;
+  color: var(--tinta2);
+  border: 1px solid var(--linea);
+  padding: 8px 14px;
+}
+.pestanas button[aria-selected='true'] {
+  color: var(--tinta);
+  border-color: var(--oro);
+}
+.cifras {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.cifra .valor {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 28px;
+  font-weight: 700;
+}
+.cifra .etiqueta {
+  font-size: 12px;
+  color: var(--tinta2);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.lista-errores {
+  margin: 10px 0 0;
+  padding-left: 20px;
+}
+.lista-errores li {
+  margin: 4px 0;
+}
+.lista-errores code {
+  color: var(--oro);
+}

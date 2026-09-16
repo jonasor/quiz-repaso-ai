@@ -14,8 +14,11 @@ import {
   browserLocalPersistence,
   connectAuthEmulator,
   getAuth,
+  onAuthStateChanged,
   setPersistence,
   signInAnonymously,
+  signInWithEmailAndPassword,
+  signOut,
   type Auth,
   type User,
 } from 'firebase/auth';
@@ -72,4 +75,58 @@ export async function signInAsParticipant(auth: Auth): Promise<User> {
   if (auth.currentUser !== null) return auth.currentUser;
   const cred = await signInAnonymously(auth);
   return cred.user;
+}
+
+/**
+ * Identidad tal como la ve la interfaz. La UI no importa Firebase (T074): recibe esto.
+ */
+export interface Identity {
+  readonly uid: string;
+  readonly isAnonymous: boolean;
+  /** El custom claim `presenter`, firmado por el Admin SDK (D10). */
+  readonly isPresenter: boolean;
+}
+
+async function toIdentity(user: User): Promise<Identity> {
+  const token = await user.getIdTokenResult();
+  return {
+    uid: user.uid,
+    isAnonymous: user.isAnonymous,
+    isPresenter: token.claims['presenter'] === true,
+  };
+}
+
+export function watchIdentity(auth: Auth, onChange: (id: Identity | null) => void): () => void {
+  return onAuthStateChanged(auth, (user) => {
+    if (user === null) {
+      onChange(null);
+      return;
+    }
+    void toIdentity(user).then(onChange, () => onChange(null));
+  });
+}
+
+export async function ensureParticipantIdentity(auth: Auth): Promise<Identity> {
+  return toIdentity(await signInAsParticipant(auth));
+}
+
+/**
+ * Presentador: cuenta real, creada a mano en la consola (T010). Ser presentador no lo
+ * decide esta función ni la interfaz, sino el claim que leen las reglas: si la cuenta no
+ * lo tiene, entra, pero no puede hacer nada.
+ */
+export async function signInAsPresenter(
+  auth: Auth,
+  email: string,
+  password: string,
+): Promise<Identity> {
+  await setPersistence(auth, browserLocalPersistence);
+  const cred = await signInWithEmailAndPassword(auth, email, password);
+  // Forzar el token: un claim recién otorgado no llega hasta refrescarlo.
+  await cred.user.getIdToken(true);
+  return toIdentity(cred.user);
+}
+
+export function signOutUser(auth: Auth): Promise<void> {
+  return signOut(auth);
 }

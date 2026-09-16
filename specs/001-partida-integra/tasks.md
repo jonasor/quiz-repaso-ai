@@ -129,7 +129,7 @@ ella. Si no se sostiene, el modelo de cierre cambia y cualquier UI escrita antes
 - [X] T048 [US1] Implementar en `src/data/rounds.ts` la publicación de ronda como **una transacción** que crea la ronda activa, mueve `config/activeRound` y archiva la anterior, con `maxParticipants` como parámetro de la ronda y valor por defecto holgado sobre los ~50 esperados (FR-009)
 - [X] T049 [US1] Implementar en `src/data/rounds.ts` el ajuste de `maxParticipants` sobre una **ronda en curso** (FR-012). Es la salida operativa del modelo de amenaza: el tope acota el volumen de datos, no impide que alguien ocupe el cupo indebidamente, y sin esta acción una sala mal llenada deja la sesión bloqueada sin remedio
 - [X] T050 [US1] Implementar en `src/data/rounds.ts` la entrada como **`runTransaction`, no `writeBatch`**: crea el participante, reserva el apodo e incrementa el contador, con reintento y retroceso exponencial ante colisión de apodo o conflicto de contador
-- [ ] T051 [US1] **Medir la entrada en ráfaga** contra el emulador con un script en `scripts/measure-join-burst.ts`: 50 entradas simultáneas sobre la misma ronda, contando reintentos de transacción y tiempo del percentil 95 hasta quedar dentro. Cierra el riesgo abierto 2 de `research.md` y da el dato de SC-001, que exige menos de 15 segundos de abrir el enlace a estar dentro
+- [X] T051 [US1] **Medir la entrada en ráfaga** contra el emulador con un script en `scripts/measure-join-burst.ts`: 50 entradas simultáneas sobre la misma ronda, contando reintentos de transacción y tiempo del percentil 95 hasta quedar dentro. Cierra el riesgo abierto 2 de `research.md` y da el dato de SC-001, que exige menos de 15 segundos de abrir el enlace a estar dentro
 - [ ] T052 [US1] Calibrar el retroceso exponencial de la entrada en `src/data/rounds.ts` con el resultado de T051, y registrar la medición en el riesgo abierto 2 de `research.md`. **Si el percentil 95 supera los 15 segundos**, detener e informar: la alternativa es hacer el contador aproximado y apoyarse solo en FR-012, y esa decisión se toma con la medición delante, como dice D4
 - [X] T053 [US1] Implementar `src/data/answers.ts`: envío de respuesta con `serverTimestamp()` en `submittedAt`, y lectura de las respuestas propias por consulta filtrada por `uid`
 - [X] T054 [US1] Implementar `src/data/scores.ts`: lectura del puntaje propio, y la escritura de calificación del presentador con **valores absolutos recalculados y nunca `increment()`**, para que recalificar produzca un documento idéntico (FR-018)
@@ -137,20 +137,20 @@ ella. Si no se sostiene, el modelo de cierre cambia y cualquier UI escrita antes
 
 ### UI del participante
 
-- [ ] T056 [P] [US1] Pantalla de entrada en `src/ui/player/Entrada.tsx`: apodo generado visible, botón para pedir otro apodo antes de entrar (FR-003), y entrada sin escribir dato alguno (FR-001)
-- [ ] T057 [P] [US1] Manejo de sala llena en `src/ui/player/Entrada.tsx`: si el tope está alcanzado, avisar que la sala está llena y no dejar estado a medias (FR-010)
-- [ ] T058 [P] [US1] Sala de espera en `src/ui/player/Espera.tsx` con el apodo propio a la vista
-- [ ] T059 [US1] Pantalla de pregunta en `src/ui/player/Pregunta.tsx`: enunciado, opciones y tiempo restante visible calculado con `remainingMs()`, **sin que el reloj del cliente decida nada** (FR-026, FR-034)
-- [ ] T060 [US1] Pantalla de fase cerrada en `src/ui/player/Cerrada.tsx`: espera con la opción elegida, o el aviso de que no alcanzó a responder, y **ningún dato del grupo** (FR-032, FR-033)
-- [ ] T061 [US1] Pantalla de revelación en `src/ui/player/Revelacion.tsx`: distribución del grupo, opción correcta, y el veredicto y puntos propios (FR-041, FR-042, FR-043)
-- [ ] T062 [US1] Pantalla de podio en `src/ui/player/Podio.tsx`: tres primeras posiciones, y la posición y puntaje propios como "lugar X de Y", degradando cuando hay menos de tres participantes (FR-047, FR-049, FR-050)
+- [X] T056 [P] [US1] Pantalla de entrada en `src/ui/player/Entrada.tsx`: apodo generado visible, botón para pedir otro apodo antes de entrar (FR-003), y entrada sin escribir dato alguno (FR-001)
+- [X] T057 [P] [US1] Manejo de sala llena en `src/ui/player/Entrada.tsx`: si el tope está alcanzado, avisar que la sala está llena y no dejar estado a medias (FR-010)
+- [X] T058 [P] [US1] Sala de espera en `src/ui/player/Espera.tsx` con el apodo propio a la vista
+- [X] T059 [US1] Pantalla de pregunta en `src/ui/player/Pregunta.tsx`: enunciado, opciones y tiempo restante visible calculado con `remainingMs()`, **sin que el reloj del cliente decida nada** (FR-026, FR-034)
+- [X] T060 [US1] Pantalla de fase cerrada en `src/ui/player/Cerrada.tsx`: espera con la opción elegida, o el aviso de que no alcanzó a responder, y **ningún dato del grupo** (FR-032, FR-033)
+- [X] T061 [US1] Pantalla de revelación en `src/ui/player/Revelacion.tsx`: distribución del grupo, opción correcta, y el veredicto y puntos propios (FR-041, FR-042, FR-043)
+- [X] T062 [US1] Pantalla de podio en `src/ui/player/Podio.tsx`: tres primeras posiciones, y la posición y puntaje propios como "lugar X de Y", degradando cuando hay menos de tres participantes (FR-047, FR-049, FR-050)
 
 ### UI del presentador, mínima para conducir
 
-- [ ] T063 [US1] Panel de conducción en `src/ui/presenter/Conduccion.tsx`: abrir pregunta, revelar, avanzar y cerrar la partida, con los controles deshabilitados según `canTransition()` **como conveniencia, no como defensa**
-- [ ] T064 [US1] Pantalla de publicación de ronda en `src/ui/presenter/PublicarRonda.tsx`: elegir un cuestionario ya publicado y fijar el tope de participantes (FR-021)
-- [ ] T065 [US1] Control de ajuste del tope en `src/ui/presenter/Conduccion.tsx`: subir `maxParticipants` de la ronda en curso sin interrumpir la partida, mostrando cuántos hay dentro frente al tope vigente (FR-012)
-- [ ] T066 [US1] Ruteo y distinción de superficies en `src/ui/shared/App.tsx`: participante o presentador según autenticación, no según artefacto de despliegue
+- [X] T063 [US1] Panel de conducción en `src/ui/presenter/Conduccion.tsx`: abrir pregunta, revelar, avanzar y cerrar la partida, con los controles deshabilitados según `canTransition()` **como conveniencia, no como defensa**
+- [X] T064 [US1] Pantalla de publicación de ronda en `src/ui/presenter/PublicarRonda.tsx`: elegir un cuestionario ya publicado y fijar el tope de participantes (FR-021)
+- [X] T065 [US1] Control de ajuste del tope en `src/ui/presenter/Conduccion.tsx`: subir `maxParticipants` de la ronda en curso sin interrumpir la partida, mostrando cuántos hay dentro frente al tope vigente (FR-012)
+- [X] T066 [US1] Ruteo y distinción de superficies en `src/ui/shared/App.tsx`: participante o presentador según autenticación, no según artefacto de despliegue
 
 **Checkpoint**: US1 completa. Una ronda se juega de extremo a extremo y las cuatro escrituras del Escenario 1 de quickstart.md devuelven `permission-denied`.
 
@@ -162,14 +162,14 @@ ella. Si no se sostiene, el modelo de cierre cambia y cualquier UI escrita antes
 
 **Independent Test**: Sobre los datos de la ronda ya jugada en US1, sin volver a jugarla: el panel muestra el conteo de respuestas, la nota pedagógica aparece al revelar y el debrief ordena las preguntas por menor acierto.
 
-- [ ] T067 [US2] Conteo de respuestas en `src/ui/presenter/Conduccion.tsx`: cuántos han respondido la pregunta en curso, **sin mostrar quién respondió qué** (FR-058)
-- [ ] T068 [US2] Nota pedagógica en `src/ui/presenter/Conduccion.tsx`: leída de `solutions/{n}` y visible para el presentador al revelar (FR-072)
-- [ ] T069 [P] [US2] Test en `tests/rules/teaching-note.spec.ts`: la nota **nunca** es legible por un participante, ni antes ni después de la revelación, y no aparece en `results/{n}` (FR-046)
-- [ ] T070 [US2] Debrief en `src/ui/presenter/Debrief.tsx`: preguntas ordenadas de menor a mayor porcentaje de acierto, reportando **cero y no indefinido** cuando nadie respondió (FR-071, FR-078, FR-073, FR-074, FR-075, FR-076)
-- [ ] T071 [US2] Reproyección en `src/ui/presenter/Debrief.tsx`: volver a mostrar la revelación de cualquier pregunta ya revelada, en **solo lectura**, sin tocar `phase` ni `currentIndex` ni los puntajes (FR-024)
-- [ ] T072 [US2] Lista de rondas pasadas en `src/ui/presenter/Rondas.tsx`: rondas ya jugadas, abriendo el debrief de **una a la vez** y sin ofrecer comparación entre rondas (FR-074, FR-075, FR-076)
-- [ ] T073 [P] [US2] Test en `tests/rules/archived-round.spec.ts`: una ronda archivada respeta las mismas garantías que la ronda en vivo; `archived` no relaja ningún permiso (FR-077, FR-064, FR-065, FR-067)
-- [ ] T074 [US2] Comprobación mecánica de FR-056 en `tests/domain/presenter-surface.test.ts`: afirmar que ningún módulo bajo `src/ui/presenter/` importa el lector de respuestas, que debe existir **solo** dentro del paso de calificación de `src/data/scores.ts`. FR-056 es el único requisito que ninguna regla puede proteger —el presentador sí está autorizado a leer las respuestas—, así que su garantía es estructural y debe fallar la build, no depender de que alguien mire (FR-067, FR-069, FR-070)
+- [X] T067 [US2] Conteo de respuestas en `src/ui/presenter/Conduccion.tsx`: cuántos han respondido la pregunta en curso, **sin mostrar quién respondió qué** (FR-058)
+- [X] T068 [US2] Nota pedagógica en `src/ui/presenter/Conduccion.tsx`: leída de `solutions/{n}` y visible para el presentador al revelar (FR-072)
+- [X] T069 [P] [US2] Test en `tests/rules/teaching-note.spec.ts`: la nota **nunca** es legible por un participante, ni antes ni después de la revelación, y no aparece en `results/{n}` (FR-046)
+- [X] T070 [US2] Debrief en `src/ui/presenter/Debrief.tsx`: preguntas ordenadas de menor a mayor porcentaje de acierto, reportando **cero y no indefinido** cuando nadie respondió (FR-071, FR-078, FR-073, FR-074, FR-075, FR-076)
+- [X] T071 [US2] Reproyección en `src/ui/presenter/Debrief.tsx`: volver a mostrar la revelación de cualquier pregunta ya revelada, en **solo lectura**, sin tocar `phase` ni `currentIndex` ni los puntajes (FR-024)
+- [X] T072 [US2] Lista de rondas pasadas en `src/ui/presenter/Rondas.tsx`: rondas ya jugadas, abriendo el debrief de **una a la vez** y sin ofrecer comparación entre rondas (FR-074, FR-075, FR-076)
+- [X] T073 [P] [US2] Test en `tests/rules/archived-round.spec.ts`: una ronda archivada respeta las mismas garantías que la ronda en vivo; `archived` no relaja ningún permiso (FR-077, FR-064, FR-065, FR-067)
+- [X] T074 [US2] Comprobación mecánica de FR-056 en `tests/domain/presenter-surface.test.ts`: afirmar que ningún módulo bajo `src/ui/presenter/` importa el lector de respuestas, que debe existir **solo** dentro del paso de calificación de `src/data/scores.ts`. FR-056 es el único requisito que ninguna regla puede proteger —el presentador sí está autorizado a leer las respuestas—, así que su garantía es estructural y debe fallar la build, no depender de que alguien mire (FR-067, FR-069, FR-070)
 
 **Checkpoint**: US1 y US2 funcionan de forma independiente.
 
@@ -186,7 +186,7 @@ ella. Si no se sostiene, el modelo de cierre cambia y cualquier UI escrita antes
 - [X] T077 [P] [US3] Implementar `splitForPublication()` en `src/domain/quizFile.ts`: parte el cuestionario validado en metadatos, preguntas públicas y soluciones, resolviendo `timeLimitSec` en el cliente para que el documento público lleve siempre valor explícito (FR-064, FR-066)
 - [X] T078 [P] [US3] Test en `tests/domain/quizFile.test.ts`: cada validación de T076 con su mensaje y ubicación; un archivo con dos errores distintos reporta **ambos**; y afirmar directamente que ningún elemento de `questions` devuelto por `splitForPublication()` contiene `correctIndex` ni `teachingNote` (FR-068, SC-004)
 - [X] T079 [US3] Implementar la publicación de cuestionario en `src/data/quizzes.ts`: escribir metadatos, preguntas y soluciones, **todo o nada**, sin dejar un cuestionario a medio publicar (FR-069)
-- [ ] T080 [US3] Pantalla de publicación en `src/ui/presenter/PublicarQuiz.tsx`: subir el archivo, mostrar la lista completa de errores con su ubicación si falla, y publicar si es válido (FR-068)
+- [X] T080 [US3] Pantalla de publicación en `src/ui/presenter/PublicarQuiz.tsx`: subir el archivo, mostrar la lista completa de errores con su ubicación si falla, y publicar si es válido (FR-068)
 - [X] T081 [US3] Crear `docs/cuestionario-ejemplo.json` como plantilla para quien prepara contenido, con el formato de `contracts/quiz-file.md`
 
 **Checkpoint**: Las tres historias funcionan de forma independiente.
@@ -199,15 +199,15 @@ ella. Si no se sostiene, el modelo de cierre cambia y cualquier UI escrita antes
 
 **Independent Test**: Recargar en cada una de las fases de la partida y verificar la tabla del Escenario 4 de quickstart.md; más desconectar al presentador al expirar el plazo.
 
-- [ ] T082 [US4] Reconstrucción de estado en `src/ui/shared/App.tsx`: al cargar, cualquier cliente reconstruye su estado completo desde Firestore, sin leer nada de partida del almacenamiento local (FR-059, FR-062, SC-005)
-- [ ] T083 [US4] Recuperación del participante en `src/ui/player/`: identidad y apodo desde la persistencia de Auth más `participants/{uid}`, y respuestas y puntaje **desde Firestore y no desde memoria** (FR-060, FR-004)
-- [ ] T084 [US4] Implementar D9 en `src/data/answers.ts`: la confirmación de respuesta **espera al servidor** y se ignora el eco local de la persistencia offline. Mostrar "enviando" hasta la confirmación, y nunca "respondido" por una escritura que el servidor puede rechazar (FR-031)
+- [X] T082 [US4] Reconstrucción de estado en `src/ui/shared/App.tsx`: al cargar, cualquier cliente reconstruye su estado completo desde Firestore, sin leer nada de partida del almacenamiento local (FR-059, FR-062, SC-005)
+- [X] T083 [US4] Recuperación del participante en `src/ui/player/`: identidad y apodo desde la persistencia de Auth más `participants/{uid}`, y respuestas y puntaje **desde Firestore y no desde memoria** (FR-060, FR-004)
+- [X] T084 [US4] Implementar D9 en `src/data/answers.ts`: la confirmación de respuesta **espera al servidor** y se ignora el eco local de la persistencia offline. Mostrar "enviando" hasta la confirmación, y nunca "respondido" por una escritura que el servidor puede rechazar (FR-031)
 - [X] T085 [P] [US4] Test en `tests/domain/answer-state.test.ts`: el estado "respondida" se deriva de la existencia del documento en el servidor, nunca de un estado local optimista
-- [ ] T086 [US4] Impedir responder de nuevo tras recarga en `src/ui/player/Pregunta.tsx`, derivándolo del documento de respuesta leído del servidor (FR-061)
-- [ ] T087 [US4] Incorporación tardía en `src/ui/player/`: quien entra con la partida iniciada va a la fase vigente, con cero puntos en las preguntas ya cerradas (FR-063)
-- [ ] T088 [US4] Recuperación del presentador en `src/ui/presenter/Conduccion.tsx`: retoma en la fase vigente sin alterar el estado de la partida
-- [ ] T089 [P] [US4] Test en `tests/rules/idempotency.spec.ts`: ejecutar dos veces cada acción de conducción deja el mismo estado; el segundo `create` de `results/{n}` falla; y una recalificación produce un documento de puntaje idéntico (FR-018)
-- [ ] T090 [P] [US4] Test en `tests/rules/presenter-offline.spec.ts`: con el plazo vencido y sin ninguna escritura de cambio de fase, una respuesta se rechaza. Es la prueba de D1 y de que la desconexión del presentador no congela la partida (FR-015)
+- [X] T086 [US4] Impedir responder de nuevo tras recarga en `src/ui/player/Pregunta.tsx`, derivándolo del documento de respuesta leído del servidor (FR-061)
+- [X] T087 [US4] Incorporación tardía en `src/ui/player/`: quien entra con la partida iniciada va a la fase vigente, con cero puntos en las preguntas ya cerradas (FR-063)
+- [X] T088 [US4] Recuperación del presentador en `src/ui/presenter/Conduccion.tsx`: retoma en la fase vigente sin alterar el estado de la partida
+- [X] T089 [P] [US4] Test en `tests/rules/idempotency.spec.ts`: ejecutar dos veces cada acción de conducción deja el mismo estado; el segundo `create` de `results/{n}` falla; y una recalificación produce un documento de puntaje idéntico (FR-018)
+- [X] T090 [P] [US4] Test en `tests/rules/presenter-offline.spec.ts`: con el plazo vencido y sin ninguna escritura de cambio de fase, una respuesta se rechaza. Es la prueba de D1 y de que la desconexión del presentador no congela la partida (FR-015)
 
 **Checkpoint**: Las cuatro historias funcionan. La feature está completa.
 
@@ -215,16 +215,16 @@ ella. Si no se sostiene, el modelo de cierre cambia y cualquier UI escrita antes
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T091 Verificar el Principio VI: `npm run build` y comprobar que `dist/` no contiene el texto de ninguna respuesta correcta ni nota pedagógica
-- [ ] T092 Verificar FR-055 —que la vinculación apodo↔persona sea imposible incluso para quien administra el sistema— recorriendo el esquema de `data-model.md` y confirmando que **ningún documento admite un campo de texto libre** proveniente de un participante: el apodo va partido en `adjective` y `animal`, ambos acotados al catálogo por reglas (SC-008) Y verificar FR-011 en el mismo recorrido: que el tope se haga cumplir **sin ningún campo ni lectura que reconozca un dispositivo o una persona**, de modo que la barrera de cupo no sea una vía de identificación (FR-011)
-- [ ] T093 Verificar los dos requisitos negativos que nada más comprueba: que no exista ninguna ruta de código ni de UI que ofrezca recuperación de identidad entre dispositivos (FR-005), y que no exista forma de avanzar de fase que no pase por el presentador, es decir ningún modo asincrónico ni de práctica individual (FR-025). Son requisitos de **ausencia**: su riesgo no es implementarlos mal, es que alguien los añada más adelante sin notar que están prohibidos
+- [X] T091 Verificar el Principio VI: `npm run build` y comprobar que `dist/` no contiene el texto de ninguna respuesta correcta ni nota pedagógica
+- [X] T092 Verificar FR-055 —que la vinculación apodo↔persona sea imposible incluso para quien administra el sistema— recorriendo el esquema de `data-model.md` y confirmando que **ningún documento admite un campo de texto libre** proveniente de un participante: el apodo va partido en `adjective` y `animal`, ambos acotados al catálogo por reglas (SC-008) Y verificar FR-011 en el mismo recorrido: que el tope se haga cumplir **sin ningún campo ni lectura que reconozca un dispositivo o una persona**, de modo que la barrera de cupo no sea una vía de identificación (FR-011)
+- [X] T093 Verificar los dos requisitos negativos que nada más comprueba: que no exista ninguna ruta de código ni de UI que ofrezca recuperación de identidad entre dispositivos (FR-005), y que no exista forma de avanzar de fase que no pase por el presentador, es decir ningún modo asincrónico ni de práctica individual (FR-025). Son requisitos de **ausencia**: su riesgo no es implementarlos mal, es que alguien los añada más adelante sin notar que están prohibidos
 - [ ] T094 [P] Evaluar App Check con el proveedor reCAPTCHA v3, que es el gratuito en el plan Spark. Activarlo si la medición de T095 o una prueba en sala lo aconsejan, y **obligatoriamente si el uso deja de ser presencial** —sesiones remotas, enlace distribuido fuera de la sala, o participantes que no se ven entre sí—, porque ahí decae la baja probabilidad con la que D4 acepta la amenaza. Resolver los tokens de depuración para que no bloquee la suite de reglas en local
 - [ ] T095 Medir el presupuesto real de SC-006 según el procedimiento de `specs/001-partida-integra/quickstart.md`: correr una ronda completa contra el emulador, contar lecturas y escrituras en su UI, extrapolar a 50 participantes y comparar con los límites diarios del plan Spark
 - [ ] T096 Actualizar la estimación de D8 en `research.md` con la medición de T095, sustituyendo las cifras estimadas por las reales
 - [ ] T097 **Medir la latencia de revelación** con un script en `scripts/measure-reveal-fanout.ts`: abrir 50 suscripciones simultáneas al documento de ronda contra el emulador, revelar una pregunta y medir el retardo hasta que la última recibe el agregado. SC-002 exige menos de 2 segundos y ninguna tarea lo verificaba
-- [ ] T098 [P] Accesibilidad en `src/ui/shared/`: distinguir las opciones por **forma además de color**, como ya hacía el prototipo, para que la proyección en sala no dependa de la percepción del color
-- [ ] T099 [P] Estados de error y vacío en `src/ui/`: pérdida de conexión, sala llena, ronda archivada y cuestionario sin publicar
-- [ ] T100 Añadir al script `test:domain` una comprobación que falle si la columna *dónde vive* de la tabla de validaciones de `data-model.md` contiene la palabra "Cliente": una invariante que vive en el cliente es una violación del Principio I, y las tres que encontró la revisión del diseño no se vieron hasta buscarlas a propósito
+- [X] T098 [P] Accesibilidad en `src/ui/shared/`: distinguir las opciones por **forma además de color**, como ya hacía el prototipo, para que la proyección en sala no dependa de la percepción del color
+- [X] T099 [P] Estados de error y vacío en `src/ui/`: pérdida de conexión, sala llena, ronda archivada y cuestionario sin publicar
+- [X] T100 Añadir al script `test:domain` una comprobación que falle si la columna *dónde vive* de la tabla de validaciones de `data-model.md` contiene la palabra "Cliente": una invariante que vive en el cliente es una violación del Principio I, y las tres que encontró la revisión del diseño no se vieron hasta buscarlas a propósito
 - [ ] T101 Ejecutar los tres quality gates de la constitución en verde: `npm run typecheck`, `npm run test:domain`, `npm run test:rules`
 - [ ] T102 Ejecutar los cuatro escenarios de `quickstart.md` de principio a fin, incluidas las verificaciones manuales de integridad de la consola (FR-053, SC-003, SC-007, SC-009)
 

@@ -310,7 +310,25 @@ respondí yo.
 ## Riesgos abiertos que pasan a tasks.md
 
 1. ~~La aritmética de timestamps en reglas no está confirmada.~~ **Resuelto** el 2026-09-16 por T011 y T012. D1 se sostiene.
-2. **Contención de escritura sobre el contador de la ronda.** El tope dejó de ser blando al atar la entrada con `getAfter()` (D4), pero el contador concentra escrituras en un documento. Hay que medir la entrada en ráfaga contra el emulador y ajustar el retroceso exponencial.
+2. **Contención de escritura sobre el contador de la ronda — MEDIDO, y DECISIÓN PENDIENTE.** Medición de T051 con `scripts/measure-join-burst.ts`: clientes reales del SDK, cada uno con identidad anónima propia, entrando a la vez por `joinRound` con las reglas reales, contra el emulador.
+
+   | Entradas simultáneas | Retroceso | Dentro | Reintentos | p50 | p95 |
+   |---|---|---|---|---|---|
+   | 1 | calibrado | 1 | 0 | 0,7 s | 0,7 s |
+   | 5 | calibrado | 5 | 10 | 4,3 s | 7,0 s |
+   | 50 | inicial: 12 intentos, 60 ms, 1,5 s | **23** | 460 | 22,8 s | 41,8 s |
+   | 50 | 40 intentos, 250 ms, 4 s | 50 | 516 | 43,0 s | 61,4 s |
+   | 50 | **calibrado: 60 intentos, 500 ms, 8 s** | **50** | 358 | 41,6 s | **51,6 s** |
+
+   **Lectura.** El costo crece linealmente, alrededor de una entrada por segundo, porque todas se serializan sobre `participantCount` de un único documento. No es calibración: con cualquier retroceso, 50 entradas simultáneas tardan del orden de 50 s. Con el retroceso calibrado entran todos, el contador queda exacto y ninguna falla; con el inicial, **más de la mitad no entraba**, que habría sido un fallo silencioso en sala.
+
+   **SC-001 (menos de 15 s) no se cumple en el peor caso** de 50 personas pulsando "Entrar" en el mismo segundo. Se cumple holgadamente cuando las entradas se reparten en el tiempo: una entrada sin competencia tarda 0,7 s en el emulador.
+
+   **Límites de la medición.** El emulador no reproduce la latencia ni el rendimiento del servicio real, y su serialización de transacciones puede ser más lenta. La conclusión estructural —serialización sobre un documento— sí se traslada.
+
+   **Decisión pendiente, tal como la reserva D4 y T052.** Dos caminos:
+   - **Mantener el contador exacto** (implementado) y mitigar operativamente: abrir la sala con antelación para que las entradas se repartan, y mostrar "entrando…" mientras dura el reintento. FR-010 sigue siendo una garantía de reglas.
+   - **Contador aproximado**: la entrada deja de serializarse sobre un documento, SC-001 se cumple también en ráfaga, y el tope pasa a ser blando y apoyado solo en FR-012. Eso vuelve a abrir la fuga de las denegaciones 17 a 19 y exige reescribir esas reglas y sus tests.
 3. **La corrección del puntaje no la verifica nadie más que el presentador.** Registrado en Complexity Tracking; es concesión sancionada por la constitución.
 4. **Ocupación del cupo con identidades anónimas fabricadas.** Aceptada por baja probabilidad en una sesión presencial, no cerrada por el diseño (D4). Revisar si el uso deja de ser presencial.
 5. ~~El alta del presentador y la inyección de `PRESENTER_UID`.~~ **Resuelto** por D10: custom claim en vez de literal. Texto original: **El alta del presentador y la inyección de `PRESENTER_UID`** no estaban resueltas. `firestore.rules` es un único artefacto que va al emulador y a producción, así que un literal obliga a que los tests usen el mismo `uid` que la cuenta real, o a plantillar las reglas por entorno. Es prerrequisito de toda la suite de reglas del presentador.
