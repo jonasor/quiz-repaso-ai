@@ -2,10 +2,9 @@ rules_version = '2';
 
 // Reglas de la partida. Contrato: specs/001-partida-integra/contracts/firestore-rules.md
 //
-// ESTADO: fase Foundational (T019). Contiene los predicados, el catálogo de apodos,
-// las reglas de respuesta ya validadas por los spikes T011 y T012, y el cierre por
-// defecto. Las reglas por colección las añaden T026, T028, T030, T032, T035 y T038,
-// cada una con sus tests.
+// ESTADO: US1 en curso. Contiene los predicados, el catálogo de apodos, las reglas
+// de cuestionario (T026), las de respuesta validadas por los spikes T011 y T012, y
+// el cierre por defecto. Faltan T028, T030, T032, T035 y T038, cada una con sus tests.
 //
 // Principio IV: este archivo no se modifica sin modificar tests/rules/.
 
@@ -70,6 +69,45 @@ service cloud.firestore {
     // imposible que un participante escriba texto arbitrario (FR-006, FR-054).
     function inCatalog(d) {
       return d.adjective in ADJECTIVES() && d.animal in ANIMALS();
+    }
+
+    // Igualdad exacta de claves: ni faltan ni sobran. hasOnly() es la garantía de
+    // seguridad (nada extra se cuela); hasAll() es la de integridad (nada falta).
+    function hasExactly(fields) {
+      return request.resource.data.keys().hasOnly(fields)
+          && request.resource.data.keys().hasAll(fields);
+    }
+
+    // ---------- Cuestionario (T026) ----------
+    //
+    // Contenido reutilizable. Una pregunta vive partida en dos documentos (D3): el
+    // público y la solución. Esa separación es lo que permite que las reglas, y no el
+    // código de publicación, garanticen que la respuesta correcta nunca llegue al
+    // dispositivo de un participante (FR-045, FR-051, FR-066).
+
+    match /quizzes/{q} {
+      allow read: if request.auth != null;
+      allow create, update: if isPresenter()
+        && hasExactly(['title', 'questionCount', 'publishedAt']);
+      allow delete: if false;
+
+      match /questions/{n} {
+        allow read: if request.auth != null;
+        // Exactamente estos cuatro campos. Un documento público con correctIndex o
+        // teachingNote se rechaza aquí aunque lo escriba el presentador:
+        // denegación 11.
+        allow create, update: if isPresenter()
+          && hasExactly(['index', 'text', 'options', 'timeLimitSec']);
+        allow delete: if false;
+      }
+
+      match /solutions/{n} {
+        // Lectura exclusiva del presentador: denegación 1, autorización 8.
+        allow read: if isPresenter();
+        allow create, update: if isPresenter()
+          && hasExactly(['correctIndex', 'teachingNote']);
+        allow delete: if false;
+      }
     }
 
     // ---------- Ronda ----------
