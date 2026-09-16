@@ -58,8 +58,14 @@ describe('canTransition', () => {
 
   it('rechaza cualquier par que no esté en la tabla', () => {
     const permitidas = new Set([
-      'lobby>open', 'open>revealed', 'revealed>open', 'revealed>podium', 'podium>archived',
-      'lobby>archived', 'open>archived', 'revealed>archived',
+      'lobby>open',
+      'open>revealed',
+      'revealed>open',
+      'revealed>podium',
+      'podium>archived',
+      'lobby>archived',
+      'open>archived',
+      'revealed>archived',
     ]);
     for (const from of TODAS) {
       for (const to of TODAS) {

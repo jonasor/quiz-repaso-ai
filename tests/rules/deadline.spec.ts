@@ -14,7 +14,11 @@
  * Lo que cierra es el paso del tiempo del servidor, no una acción.
  */
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
-import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
+import {
+  assertFails,
+  assertSucceeds,
+  type RulesTestEnvironment,
+} from '@firebase/rules-unit-testing';
 import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { asAnon, setupTestEnv } from './helpers';
 
@@ -27,10 +31,24 @@ const PLAYER = 'player-1';
 async function seedRound(openedAtMs: number, timeLimitSec: number) {
   await env.withSecurityRulesDisabled(async (ctx) => {
     await setDoc(doc(ctx.firestore(), 'rounds', ROUND), {
+      quizId: 'quiz1',
       phase: 'open',
       currentIndex: 0,
       openedAt: Timestamp.fromMillis(openedAtMs),
       timeLimitSec,
+    });
+    await setDoc(doc(ctx.firestore(), 'quizzes/quiz1/questions', '0'), {
+      index: 0,
+      text: 'Pregunta',
+      options: ['A', 'B', 'C', 'D'],
+      timeLimitSec: 30,
+    });
+    // Solo responde quien entró a la ronda (T035). El spike mide el plazo, no la
+    // entrada, así que el participante se siembra ya dentro.
+    await setDoc(doc(ctx.firestore(), `rounds/${ROUND}/participants`, PLAYER), {
+      adjective: 'Astuto',
+      animal: 'Zorro',
+      joinedAt: Timestamp.now(),
     });
   });
 }

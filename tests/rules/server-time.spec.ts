@@ -7,7 +7,11 @@
  * se mide con una referencia que el participante no controla.
  */
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
-import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
+import {
+  assertFails,
+  assertSucceeds,
+  type RulesTestEnvironment,
+} from '@firebase/rules-unit-testing';
 import { doc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { asAnon, setupTestEnv } from './helpers';
 
@@ -25,10 +29,23 @@ beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async (ctx) => {
     await setDoc(doc(ctx.firestore(), 'rounds', ROUND), {
+      quizId: 'quiz1',
       phase: 'open',
       currentIndex: 0,
       openedAt: Timestamp.fromMillis(Date.now() - 2_000),
       timeLimitSec: 30,
+    });
+    await setDoc(doc(ctx.firestore(), 'quizzes/quiz1/questions', '0'), {
+      index: 0,
+      text: 'Pregunta',
+      options: ['A', 'B', 'C', 'D'],
+      timeLimitSec: 30,
+    });
+    // Solo responde quien entró a la ronda (T035).
+    await setDoc(doc(ctx.firestore(), `rounds/${ROUND}/participants`, PLAYER), {
+      adjective: 'Astuto',
+      animal: 'Zorro',
+      joinedAt: Timestamp.now(),
     });
   });
 });

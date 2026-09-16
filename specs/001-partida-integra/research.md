@@ -251,6 +251,14 @@ con 50 participantes se estima en el orden de 6.000 lecturas y 1.600 escrituras,
 holgadamente dentro de los límites diarios del plan Spark, lo que deja margen para
 varias rondas por día.
 
+**Actualización de la implementación: la calificación ya no crece con el cuadrado.**
+`gradeQuestion` (src/domain/grading.ts) no relee las respuestas de las preguntas
+anteriores: toma los resultados ya guardados en `perQuestion` de cada puntaje, reemplaza
+el elemento de la pregunta actual y recalcula los totales desde ese arreglo. Sigue siendo
+idempotente, porque nunca suma sobre el total anterior, y cada revelación lee del orden
+de `3 × aforo` documentos —participantes, respuestas de la pregunta y puntajes— más las
+preguntas del cuestionario. El análisis que sigue describe el diseño original.
+
 **Las lecturas de calificación crecen con el cuadrado del número de preguntas.**
 Recalcular los totales desde cero en cada revelación (D6) obliga a leer todas las
 respuestas de todas las preguntas anteriores: en la pregunta *n* son *n* × aforo

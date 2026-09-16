@@ -43,7 +43,7 @@ describe('generateNickname', () => {
 
   it('siempre produce un apodo del catálogo', () => {
     let seed = 42;
-    const rng = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+    const rng = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
     for (let i = 0; i < 500; i++) {
       expect(isGeneratable(generateNickname(rng))).toBe(true);
     }
@@ -76,7 +76,8 @@ describe('formato', () => {
 
   it('produce un id único por combinación', () => {
     const ids = new Set<string>();
-    for (const a of ADJECTIVES) for (const n of ANIMALS) ids.add(nicknameDocId({ adjective: a, animal: n }));
+    for (const a of ADJECTIVES)
+      for (const n of ANIMALS) ids.add(nicknameDocId({ adjective: a, animal: n }));
     expect(ids.size).toBe(ADJECTIVES.length * ANIMALS.length);
   });
 });

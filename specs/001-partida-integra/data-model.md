@@ -217,9 +217,10 @@ participante no puede leer, porque FR-046 la excluye de su dispositivo en todo m
 | Campo | Tipo | Notas |
 |---|---|---|
 | `uid` | string | Base de la regla de lectura |
-| `nickname` | string | Compuesto por el presentador desde `adjective` y `animal` del participante, para que el podio no tenga que unir colecciones |
+| `adjective` | string | Copiado del participante, para que el podio no tenga que unir colecciones |
+| `animal` | string | Ídem |
 | `perQuestion` | array\<{`correct`: boolean, `points`: number, `elapsedMs`: number}\> | Un elemento por pregunta calificada |
-| `totalPoints` | number | Recalculado desde cero en cada calificación (FR-039) |
+| `totalPoints` | number | Recalculado desde `perQuestion` completo en cada calificación, nunca sumado sobre el anterior (FR-039) |
 | `totalElapsedMs` | number | Con el tiempo límite completo imputado a las no respondidas (FR-040) |
 | `correctCount` | number | |
 | `rank` | number \| null | Posición final; se escribe al cerrar la partida (FR-049) |
@@ -227,13 +228,14 @@ participante no puede leer, porque FR-046 la excluye de su dispositivo en todo m
 Escritura exclusiva del presentador (FR-035). Lectura del dueño o del presentador
 (FR-052). **Valores absolutos, nunca `increment()`** (D6).
 
-### `rounds/{roundId}/podium`
+### `rounds/{roundId}/podium/final`
 
-Documento único, público, escrito al cerrar la partida.
+Documento único, público, escrito al cerrar la partida. Firestore no admite un documento
+en `rounds/{roundId}/podium`, que es una ruta de colección: el id `final` es obligatorio.
 
 | Campo | Tipo | Notas |
 |---|---|---|
-| `top` | array\<{`rank`: number, `nickname`: string, `totalPoints`: number, `correctCount`: number}\> | Las tres primeras posiciones, o menos si hay menos participantes (FR-050) |
+| `top` | array\<{`rank`: number, `adjective`: string, `animal`: string, `totalPoints`: number, `correctCount`: number}\> | Las tres primeras **posiciones**, o menos si hay menos participantes (FR-050). Un empate en la tercera puede publicar más de tres entradas |
 | `participantCount` | number | Denominador de "lugar X de Y" (FR-049) |
 | `closedAt` | timestamp | |
 

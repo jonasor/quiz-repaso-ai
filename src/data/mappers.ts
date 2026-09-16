@@ -13,7 +13,11 @@ import { Timestamp } from 'firebase/firestore';
 import type {
   Answer,
   Participant,
+  ParticipantScore,
+  Podium,
+  PodiumEntry,
   PublicQuestion,
+  QuestionOutcome,
   QuestionResult,
   Round,
   Solution,
@@ -88,5 +92,61 @@ export function toQuestionResult(data: Record<string, unknown>): QuestionResult 
     correctIndex: data['correctIndex'] as number,
     correctPct: data['correctPct'] as number,
     revealedAtMs: msRequerido(data['revealedAt'], 'revealedAt'),
+  };
+}
+
+export interface QuizSummary {
+  readonly id: string;
+  readonly title: string;
+  readonly questionCount: number;
+  readonly publishedAtMs: number | null;
+}
+
+export function toQuizSummary(id: string, data: Record<string, unknown>): QuizSummary {
+  return {
+    id,
+    title: data['title'] as string,
+    questionCount: data['questionCount'] as number,
+    // Recién publicado, el serverTimestamp puede no haber vuelto todavía.
+    publishedAtMs: ms(data['publishedAt']),
+  };
+}
+
+export function toScore(data: Record<string, unknown>): ParticipantScore {
+  return {
+    uid: data['uid'] as string,
+    adjective: data['adjective'] as string,
+    animal: data['animal'] as string,
+    perQuestion: (data['perQuestion'] as QuestionOutcome[] | undefined) ?? [],
+    totalPoints: data['totalPoints'] as number,
+    totalElapsedMs: data['totalElapsedMs'] as number,
+    correctCount: data['correctCount'] as number,
+    rank: (data['rank'] as number | null | undefined) ?? null,
+  };
+}
+
+/** Lo que se escribe: el mismo objeto, con `perQuestion` como mapas planos. */
+export function fromScore(s: ParticipantScore): Record<string, unknown> {
+  return {
+    uid: s.uid,
+    adjective: s.adjective,
+    animal: s.animal,
+    perQuestion: s.perQuestion.map((o) => ({
+      correct: o.correct,
+      points: o.points,
+      elapsedMs: o.elapsedMs,
+    })),
+    totalPoints: s.totalPoints,
+    totalElapsedMs: s.totalElapsedMs,
+    correctCount: s.correctCount,
+    rank: s.rank,
+  };
+}
+
+export function toPodium(data: Record<string, unknown>): Podium {
+  return {
+    top: (data['top'] as PodiumEntry[] | undefined) ?? [],
+    participantCount: data['participantCount'] as number,
+    closedAtMs: ms(data['closedAt']) ?? 0,
   };
 }

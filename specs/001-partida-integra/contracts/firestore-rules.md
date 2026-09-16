@@ -48,13 +48,13 @@ bloquearía entradas legítimas.
 | `quizzes/{q}/questions/{n}` | cualquiera autenticado | `isPresenter()` y campos exactos | `isPresenter()` y campos exactos | nunca |
 | `quizzes/{q}/solutions/{n}` | **`isPresenter()`** | `isPresenter()` | `isPresenter()` | nunca |
 | `config/activeRound` | cualquiera autenticado | `isPresenter()` atado a la creación de la ronda | `isPresenter()` atado a la creación de la ronda | nunca |
-| `rounds/{r}` | cualquiera autenticado | `isPresenter()` y el puntero apunta aquí | `isPresenter()` con transición legal, **o** `isAnon()` solo para incrementar `participantCount` atado a su propia entrada | nunca |
+| `rounds/{r}` | `get`: cualquiera autenticado; `list`: `isPresenter()` | `isPresenter()` y el puntero apunta aquí | `isPresenter()` con transición legal o ajuste de tope, **o** `isAnon()` solo para incrementar `participantCount` atado a su propia entrada | nunca |
 | `rounds/{r}/participants/{uid}` | cualquiera autenticado | `isOwner(uid)` con validaciones de entrada | nunca | nunca |
 | `rounds/{r}/nicknames/{nick}` | cualquiera autenticado | `isAnon()` atado a su propia entrada | **nunca** | **nunca** |
-| `rounds/{r}/answers/{uid}_{n}` | `resource.data.uid == request.auth.uid` o `isPresenter()` | `isOwner()` con validaciones de respuesta | **nunca** | **nunca** |
+| `rounds/{r}/answers/{uid}_{n}` | `get`: por la ruta, el dueño o `isPresenter()`; `list`: filtrada por su `uid` o `isPresenter()` | `isOwner()` con validaciones de respuesta | **nunca** | **nunca** |
 | `rounds/{r}/results/{n}` | cualquiera autenticado | `isPresenter()` | **nunca** | nunca |
-| `rounds/{r}/scores/{uid}` | `resource.data.uid == request.auth.uid` o `isPresenter()` | `isPresenter()` | `isPresenter()` | nunca |
-| `rounds/{r}/podium` | cualquiera autenticado | `isPresenter()` | `isPresenter()` | nunca |
+| `rounds/{r}/scores/{uid}` | `isOwner(uid)` por la ruta, o `isPresenter()` | `isPresenter()` | `isPresenter()` | nunca |
+| `rounds/{r}/podium/final` | cualquiera autenticado | `isPresenter()` | `isPresenter()` | nunca |
 | cualquier otra ruta | nunca | nunca | nunca | nunca |
 
 Cierre explícito al final: `match /{document=**} { allow read, write: if false; }`.
@@ -84,6 +84,13 @@ allow create on rounds/{r}/answers/{answerId} if
 
 La ausencia de `update` y `delete` cubre FR-028 y FR-027 sin condición adicional.
 
+**Condiciones añadidas al implementar** (T035), cada una con su test:
+
+- `exists(participants/{uid})`: solo responde quien entró. Sin esto, una identidad que nunca pasó por el tope podía responder y ser calificada.
+- `optionIndex < size(options)` de la pregunta publicada: sin tope superior se aceptaba la opción 7 de una pregunta de 4.
+
+**Lectura por la ruta, no por el contenido.** `get` de la respuesta propia y del puntaje propio se decide por el id del documento, no por `resource.data.uid`. Con la regla por contenido, leer un documento que aún no existe se deniega, y el participante no podría comprobar tras recargar si ya respondió (FR-061) ni escuchar su puntaje antes de que se escriba.
+
 ## Condiciones de transición de fase
 
 Una transición es legal si el par (origen, destino) está en la tabla y los campos
@@ -110,6 +117,15 @@ siendo avance. Lo que no existe es ninguna transición **desde** `archived`.
 Condiciones extra sobre `revealed → open`: `currentIndex` entrante debe ser
 `resource.data.currentIndex + 1` y menor que `questionCount`. Eso hace imposible
 retroceder o saltar preguntas (FR-023).
+
+**Condiciones añadidas al implementar** (T030):
+
+- Al abrir, `openedAt == request.time` y `timeLimitSec` igual al de la pregunta publicada. El plazo entero depende de esos dos valores; sin esto el presentador podía fijarlos a mano.
+- `revealed → open` y `revealed → podium` exigen que exista `results/{currentIndex}`. No se avanza sin haber calificado.
+- `revealed → podium` exige `currentIndex + 1 == questionCount` y `endedAt == request.time`.
+- **Ajuste de tope** (FR-012): cambia solo `maxParticipants`, entero positivo, no menor que `participantCount`, fuera de `archived`. Se exige `hasAll` además de `hasOnly`: una actualización sin cambios tiene `affectedKeys()` vacío, que cumple cualquier `hasOnly()`, y habría dejado pasar el doble clic por esta rama.
+
+**Orden de la revelación.** `open → revealed` cierra la admisión; la calificación va *después*, y `results/{n}` solo se puede crear con la fase ya en `revealed`. Si se calificara antes de cerrar, una respuesta confirmada entre la lectura y la escritura quedaría fuera.
 
 ## La entrada es una transacción de tres escrituras
 
@@ -174,8 +190,21 @@ arreglo: conviene no añadir más condiciones cruzadas sin recontar.
 
 **Debe ser una transacción, no un `writeBatch`.** Un batch es atómico pero no serializa
 contra otros escritores: dos entradas simultáneas leerían el mismo `participantCount` y
-escribirían el mismo valor, perdiendo una cuenta. Una transacción de Firestore reintenta
-ante conflicto, y es lo que hace exacto el contador.
+escribirían el mismo valor, perdiendo una cuenta.
+
+**Y la transacción no basta sola: hay que reintentar.** Hallazgo de la implementación.
+Con dos entradas simultáneas, la segunda escribe un contador que ya no es el leído, y las
+reglas —que exigen exactamente `+1`— la rechazan con `permission-denied` **antes** de que
+Firestore detecte el conflicto. El SDK solo reintenta conflictos, no permisos denegados,
+así que esa entrada fallaría de forma definitiva. `joinRound` relee y reintenta con
+retroceso exponencial, y dentro de la transacción distingue lo definitivo —sala llena,
+ronda archivada, apodo tomado— de haber perdido la carrera. Fijado en
+`tests/rules/join-allow.spec.ts` y probado con diez entradas simultáneas en
+`tests/rules/data-flow.spec.ts`.
+
+**Condición añadida en la reserva de apodo**: `nick` debe ser el apodo del propio
+participante que nace en esa transacción. Sin ella, un mismo acto de entrada podía
+reservar además apodos ajenos y dejarlos inservibles para los demás.
 
 **Riesgo residual honesto**: el contador concentra escrituras en un solo documento, y
 Firestore sostiene del orden de una escritura por segundo sobre un documento. Cincuenta

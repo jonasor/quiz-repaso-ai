@@ -30,8 +30,8 @@ describe('sincronización del catálogo', () => {
   });
 
   it('el espacio que validan las reglas también supera las 5000 combinaciones', () => {
-    expect(listaDeReglas('ADJECTIVES').length * listaDeReglas('ANIMALS').length).toBeGreaterThanOrEqual(
-      5000,
-    );
+    expect(
+      listaDeReglas('ADJECTIVES').length * listaDeReglas('ANIMALS').length,
+    ).toBeGreaterThanOrEqual(5000);
   });
 });
