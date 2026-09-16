@@ -15,6 +15,7 @@
     "test:rules": "vitest run --project rules",
     "emulators": "firebase emulators:start --only firestore,auth",
     "verify:dist": "npm run build && node scripts/check-dist.mjs",
+    "presenter:emulator": "FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 tsx scripts/create-presenter-emulator.ts",
     "seed": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 tsx scripts/seed-emulator.ts"
   },
   "dependencies": {

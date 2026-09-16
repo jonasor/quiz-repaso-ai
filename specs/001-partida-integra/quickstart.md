@@ -25,6 +25,15 @@ firebase emulators:start --only firestore,auth    # dejar corriendo
 npm run dev                                        # en otra terminal
 ```
 
+### Cuenta de presentador en local
+
+```bash
+npm run emulators            # en una terminal aparte
+npm run presenter:emulator   # presentador@quiz.test / presentador123, con el claim
+npm run seed                 # cuestionario de ejemplo y una ronda en lobby
+npm run dev                  # participante: http://localhost:5173/  ·  presentador: /presentador
+```
+
 ## Quality gates
 
 Los tres deben estar en verde antes de fusionar. Es lo que fija la constitución.
