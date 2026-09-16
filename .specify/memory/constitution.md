@@ -32,18 +32,39 @@ Autenticación anónima, apodos generados por el sistema, cero PII: sin nombres,
 sin correos, sin identificadores corporativos, sin campos de texto libre que
 puedan contenerlos.
 
-Ningún resultado individual es legible por otro jugador ni por el presentador. El
-presentador ve únicamente agregados por pregunta y un podio de apodos. Las reglas
-DEBEN denegar la lectura de la respuesta de un `uid` ajeno a cualquier
-participante, incluido el presentador.
+Ningún resultado individual es legible por otro participante: las reglas DEBEN
+denegar a todo participante la lectura de la respuesta y del puntaje de un `uid`
+ajeno, en cualquier fase y también en rondas archivadas.
 
-**Verificable como**: no existe ruta de lectura, consulta ni unión de documentos
-que produzca el par (persona real, respuesta). El intento DEBE tener un test de
-denegación explícito.
+El presentador es la única excepción, y solo en lectura: su cliente autenticado
+DEBE poder leer respuestas y puntajes individuales porque es la autoridad de
+calificación (ver Restricciones Técnicas). Esa lectura está acotada de dos formas,
+y ambas DEBEN sostenerse:
 
-**Rationale**: el quiz refuerza aprendizaje, no evalúa personas. Esa promesa solo
-se sostiene si la arquitectura la hace imposible de romper —incluso para quien
-administra el sistema— y no meramente improbable.
+- **Por los datos**: ninguna respuesta ni puntaje contiene un atributo que remita
+  a una persona real. Lo que el presentador lee es anónimo por construcción.
+- **Por la interfaz**: ninguna vista del presentador DEBE mostrar resultados
+  individuales. Ve agregados por pregunta y un podio de apodos. La lectura de
+  respuestas ajenas DEBE existir en un único punto del código, el paso de
+  calificación, y no exportarse.
+
+La garantía frente al presentador es entonces la ausencia de PII y de vistas
+individuales, no la confidencialidad de los datos: quien administra el sistema
+puede leer respuestas anónimas, y NO DEBE poder vincularlas con una persona.
+
+**Verificable como**: (1) tests de denegación explícitos para que un participante
+lea la respuesta y el puntaje de otro `uid`, también en una ronda archivada;
+(2) una comprobación mecánica que falle la build si alguna vista del presentador
+importa Firebase directamente o si la lectura de respuestas ajenas aparece fuera
+del paso de calificación; (3) ninguna ruta de lectura, consulta ni unión de
+documentos produce el par (persona real, respuesta).
+
+**Rationale**: el quiz refuerza aprendizaje, no evalúa personas. Sin backend,
+alguien tiene que calificar, y el único principal autenticado disponible es el
+presentador. Negar esa lectura en el papel no la elimina, solo la vuelve una
+promesa falsa. Lo que hace imposible evaluar a una persona no es ocultarle al
+presentador datos anónimos: es que esos datos no remitan a nadie y que ninguna
+pantalla los muestre uno por uno.
 
 ### III. Dominio puro, aislado de Firebase
 
@@ -180,4 +201,4 @@ los artefactos de Spec Kit vigentes que dependan del principio afectado.
   existente.
 - **PATCH**: aclaraciones, redacción, correcciones no semánticas.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-16 | **Last Amended**: 2026-09-16
+**Version**: 2.0.0 | **Ratified**: 2026-09-16 | **Last Amended**: 2026-09-16
