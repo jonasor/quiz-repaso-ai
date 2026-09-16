@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-16
 
-**Status**: Draft
+**Status**: Implemented
 
 **Input**: Reescritura del prototipo de un solo archivo ya usado en una sesión real. Se conserva el comportamiento observable salvo donde los requisitos de integridad lo cambien; lo que cambia son las garantías.
 
