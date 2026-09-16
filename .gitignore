@@ -39,3 +39,4 @@ dist/
 !.env.example
 *.log
 coverage/
+*.tsbuildinfo
