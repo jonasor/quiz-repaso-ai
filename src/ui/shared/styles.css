@@ -296,11 +296,16 @@ select:focus-visible {
   gap: 10px;
   align-items: center;
 }
+.dist .forma {
+  font-size: 18px;
+  text-align: center;
+}
 .dist-texto {
-  grid-column: 2 / 4;
+  /* Alineado con la barra: 30px de la forma más 10px de separación. */
+  margin: 4px 0 0 40px;
   font-size: 14px;
+  line-height: 1.35;
   color: var(--tinta2);
-  margin-top: -6px;
 }
 .dist-pista {
   height: 30px;

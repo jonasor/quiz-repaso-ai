@@ -60,13 +60,20 @@ export function useIdentity(): { readonly ready: boolean; readonly identity: Ide
   return state;
 }
 
-/** Ronda activa: la única fuente de verdad de la fase para cualquier cliente (FR-062). */
-export function useActiveRound(): Loadable<RoundWithId | null> {
+/**
+ * Ronda activa: la única fuente de verdad de la fase para cualquier cliente (FR-062).
+ *
+ * `enabled` debe esperar a la identidad. Las reglas exigen estar autenticado para leer
+ * la ronda; si la suscripción arranca antes de que termine el alta anónima, se rechaza
+ * con permiso denegado y no se recupera. Pasaba justo la primera vez que alguien abría
+ * el enlace. `attempt` rehace la suscripción al reintentar.
+ */
+export function useActiveRound(enabled = true, attempt = 0): Loadable<RoundWithId | null> {
   const { db } = useFirebase();
   return useSubscription<RoundWithId | null>(
-    (onValue, onError) => watchActiveRound(db, onValue, onError),
+    enabled ? (onValue, onError) => watchActiveRound(db, onValue, onError) : null,
     null,
-    [db],
+    [db, enabled, attempt],
   );
 }
 

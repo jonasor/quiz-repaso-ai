@@ -176,3 +176,26 @@ convertir SC-006 en verificable:
 Si la medición se aparta mucho de la estimación, revisa primero qué está suscrito a qué:
 la decisión de D8 de que los participantes **no** observen el listado de participantes
 es la que domina el costo, porque de lo contrario crece con el cuadrado del aforo.
+
+## Resultado de T102 (2026-09-16)
+
+Los cuatro escenarios se ejecutaron en Chrome contra el emulador, con un presentador y tres
+participantes reales. Para tener identidades distintas en un mismo navegador, cada uno
+usó un origen distinto (`127.0.0.1:5173/presentador`, `localhost:5173`, `localhost:5174`,
+`127.0.0.1:5174`): las pestañas del mismo origen comparten la sesión de Firebase.
+
+| Escenario | Verificado |
+|---|---|
+| 1 | Entrada sin escribir nada; "otro apodo"; pregunta con contador; "respuesta registrada" solo con confirmación; quien respondió antes obtuvo más (145 frente a 102 pts); revelación con distribución y veredicto propio; podio con posición propia |
+| 1, integridad | Desde la consola de un participante, con la pregunta abierta: leer la solución, responder con `points`, leer la respuesta de otro y conducir la partida devuelven las cuatro `permission-denied` |
+| 2 | Conteo de respondidos sin ver quién; nota pedagógica al revelar; debrief de menor a mayor acierto; reproyección de solo lectura sin cambiar la fase; rondas pasadas con debrief de una ronda archivada |
+| 3 | Un archivo con cuatro errores los muestra todos con su ubicación y no publica nada; el archivo válido se publica y queda disponible para una ronda |
+| 4 | Recarga en pregunta abierta ya respondida (sigue respondida, no deja responder otra vez), en fase cerrada (presentador), en revelada y en podio (participantes); cierre por tiempo sin ninguna escritura del presentador; sala llena, ampliación en curso y entrada del tercero |
+
+**Tres bugs que solo aparecieron en el navegador**, corregidos:
+
+1. Primera visita: "No se pudo conectar". La suscripción a la ronda arrancaba antes de terminar el alta anónima y las reglas la rechazaban. Solo pasaba la primera vez que alguien abría el enlace.
+2. Las escrituras propias no llegaban a la propia pantalla: a las suscripciones que descartan escrituras pendientes les faltaba `includeMetadataChanges`. El presentador ampliaba el tope y seguía viendo el anterior. Regresión en `tests/rules/data-watch.spec.ts`.
+3. En la distribución revelada, el texto de cada opción se montaba sobre su barra.
+
+Además, `scripts/seed-emulator.ts` movía el puntero sin archivar la ronda activa anterior.

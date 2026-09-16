@@ -83,7 +83,9 @@ export function watchRound(
 ): Unsubscribe {
   return onSnapshot(
     doc(db, 'rounds', roundId),
-    { includeMetadataChanges: false },
+    // includeMetadataChanges es obligatorio si se descartan escrituras pendientes: la
+    // confirmación del servidor solo cambia metadatos, y sin esta opción no dispara evento.
+    { includeMetadataChanges: true },
     (snap) => {
       // Mientras el serverTimestamp de una escritura propia no vuelve, startedAt u
       // openedAt pueden venir vacíos. Se espera al valor del servidor.
@@ -359,6 +361,9 @@ export function watchOwnParticipant(
 ): Unsubscribe {
   return onSnapshot(
     doc(db, 'rounds', roundId, 'participants', uid),
+    // includeMetadataChanges es obligatorio si se descartan escrituras pendientes: la
+    // confirmación del servidor solo cambia metadatos, y sin esta opción no dispara evento.
+    { includeMetadataChanges: true },
     (snap) => {
       if (!snap.exists()) return onChange(null);
       if (snap.metadata.hasPendingWrites) return;

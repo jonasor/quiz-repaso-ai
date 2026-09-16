@@ -82,6 +82,17 @@ batch.set(db.doc(`rounds/${ROUND_ID}`), {
 });
 batch.set(db.doc('config/activeRound'), { roundId: ROUND_ID });
 
+// Como la aplicación: mover el puntero archiva la ronda activa anterior. El Admin SDK se
+// salta las reglas, así que sin esto la semilla dejaba dos rondas con active == true, un
+// estado que FR-022 prohíbe y que las reglas nunca permitirían desde un cliente.
+const previous = (await db.doc('config/activeRound').get()).data()?.['roundId'] as
+  string | undefined;
+if (previous !== undefined && previous !== ROUND_ID) {
+  const prevRef = db.doc(`rounds/${previous}`);
+  const prev = (await prevRef.get()).data();
+  if (prev?.['active'] === true) batch.update(prevRef, { phase: 'archived', active: false });
+}
+
 await batch.commit();
 console.log(
   `sembrado: ${quiz.questions.length} preguntas en quizzes/${QUIZ_ID}, ronda ${ROUND_ID} en lobby (tope ${MAX_PARTICIPANTS})`,

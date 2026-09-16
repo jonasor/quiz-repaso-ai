@@ -226,7 +226,7 @@ ella. Si no se sostiene, el modelo de cierre cambia y cualquier UI escrita antes
 - [X] T099 [P] Estados de error y vacío en `src/ui/`: pérdida de conexión, sala llena, ronda archivada y cuestionario sin publicar
 - [X] T100 Añadir al script `test:domain` una comprobación que falle si la columna *dónde vive* de la tabla de validaciones de `data-model.md` contiene la palabra "Cliente": una invariante que vive en el cliente es una violación del Principio I, y las tres que encontró la revisión del diseño no se vieron hasta buscarlas a propósito
 - [X] T101 Ejecutar los tres quality gates de la constitución en verde: `npm run typecheck`, `npm run test:domain`, `npm run test:rules`
-- [ ] T102 Ejecutar los cuatro escenarios de `quickstart.md` de principio a fin, incluidas las verificaciones manuales de integridad de la consola (FR-053, SC-003, SC-007, SC-009)
+- [X] T102 Ejecutar los cuatro escenarios de `quickstart.md` de principio a fin, incluidas las verificaciones manuales de integridad de la consola (FR-053, SC-003, SC-007, SC-009)
 
 ---
 

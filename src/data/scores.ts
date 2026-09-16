@@ -222,6 +222,9 @@ export function watchResult(
 ): Unsubscribe {
   return onSnapshot(
     doc(db, 'rounds', roundId, 'results', String(questionIndex)),
+    // includeMetadataChanges es obligatorio si se descartan escrituras pendientes: la
+    // confirmación del servidor solo cambia metadatos, y sin esta opción no dispara evento.
+    { includeMetadataChanges: true },
     (snap) => {
       if (!snap.exists()) return onChange(null);
       if (snap.metadata.hasPendingWrites) return;
@@ -246,6 +249,9 @@ export function watchPodium(
 ): Unsubscribe {
   return onSnapshot(
     doc(db, 'rounds', roundId, 'podium', 'final'),
+    // includeMetadataChanges es obligatorio si se descartan escrituras pendientes: la
+    // confirmación del servidor solo cambia metadatos, y sin esta opción no dispara evento.
+    { includeMetadataChanges: true },
     (snap) => {
       if (!snap.exists()) return onChange(null);
       if (snap.metadata.hasPendingWrites) return;

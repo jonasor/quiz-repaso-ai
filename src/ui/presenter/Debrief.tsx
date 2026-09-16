@@ -110,7 +110,8 @@ export function Debrief({
             correctIndex={actualR.correctIndex}
           />
           <p className="aviso">
-            Acertó el {actualR.correctPct} % de {actualR.answerCount} respuestas.
+            Acertó el {actualR.correctPct} % de {actualR.answerCount}{' '}
+            {actualR.answerCount === 1 ? 'respuesta' : 'respuestas'}.
           </p>
           {nota.value !== null && <div className="nota-debrief">{nota.value.teachingNote}</div>}
         </div>

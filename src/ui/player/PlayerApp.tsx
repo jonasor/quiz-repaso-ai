@@ -30,7 +30,7 @@ export function PlayerApp() {
     ensureParticipantIdentity(auth).then(setIdentity, setAuthError);
   }, [auth, attempt]);
 
-  const active = useActiveRound();
+  const active = useActiveRound(identity !== null, attempt);
   const roundId = active.value?.id ?? null;
   const uid = identity?.uid ?? null;
 
@@ -47,6 +47,7 @@ export function PlayerApp() {
   if (authError !== null || active.error !== null) {
     body = <SinConexion onRetry={() => setAttempt((a) => a + 1)} />;
   } else if (identity === null || active.loading) {
+    // Sin identidad todavía no se escucha la ronda: ver useActiveRound.
     body = <Cargando />;
   } else if (!identity.isAnonymous) {
     body = (
