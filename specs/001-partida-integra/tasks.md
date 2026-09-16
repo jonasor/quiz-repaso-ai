@@ -81,7 +81,7 @@ ella. Si no se sostiene, el modelo de cierre cambia y cualquier UI escrita antes
 
 ### Infraestructura de datos
 
-- [ ] T022 Implementar `src/data/firebase.ts`: inicialización y autenticación anónima con persistencia. **Sin App Check**: entró al diseño como mitigación contra la fabricación masiva de identidades, y D4 absorbió esa amenaza al volver exacto el contador con `getAfter()`. Lo que quedaba era su costo —tokens de depuración en el emulador y un proveedor sin decidir— en la fase que bloquea todas las historias
+- [ ] T022 Implementar `src/data/firebase.ts`: inicialización y autenticación anónima con persistencia. **Sin App Check**: su amenaza —una persona fabrica identidades anónimas que entran legítimamente y ocupan el cupo— se acepta por baja probabilidad en una sesión presencial, **no la cierra el contador exacto de D4**. Lo que se difiere es su costo —tokens de depuración en el emulador y un proveedor sin decidir— fuera de la fase que bloquea todas las historias
 - [ ] T023 [P] Implementar `src/data/mappers.ts`: traducción entre documentos de Firestore y los tipos de `src/domain/types.ts`, en ambos sentidos
 - [ ] T024 Crear `scripts/seed-emulator.ts` que siembre un cuestionario de ejemplo partido en `questions/` y `solutions/`, para que US1 sea demostrable sin depender de US3
 - [ ] T025 Verificación mecánica del Principio III: añadir al script `test:domain` una comprobación de que `grep -r "firebase" src/domain/` no devuelve nada
@@ -215,7 +215,7 @@ ella. Si no se sostiene, el modelo de cierre cambia y cualquier UI escrita antes
 
 - [ ] T089 Verificar el Principio VI: `npm run build` y comprobar que `dist/` no contiene el texto de ninguna respuesta correcta ni nota pedagógica
 - [ ] T090 Verificar FR-055 —que la vinculación apodo↔persona sea imposible incluso para quien administra el sistema— recorriendo el esquema de `data-model.md` y confirmando que **ningún documento admite un campo de texto libre** proveniente de un participante: el apodo va partido en `adjective` y `animal`, ambos acotados al catálogo por reglas
-- [ ] T091 [P] Evaluar App Check con el proveedor reCAPTCHA v3, que es el gratuito en el plan Spark, y activarlo solo si la medición de T092 o una prueba en sala muestran que hace falta. Resolver los tokens de depuración para que no bloquee la suite de reglas en local
+- [ ] T091 [P] Evaluar App Check con el proveedor reCAPTCHA v3, que es el gratuito en el plan Spark. Activarlo si la medición de T092 o una prueba en sala lo aconsejan, y **obligatoriamente si el uso deja de ser presencial** —sesiones remotas, enlace distribuido fuera de la sala, o participantes que no se ven entre sí—, porque ahí decae la baja probabilidad con la que D4 acepta la amenaza. Resolver los tokens de depuración para que no bloquee la suite de reglas en local
 - [ ] T092 Medir el presupuesto real de SC-006 según el procedimiento de `specs/001-partida-integra/quickstart.md`: correr una ronda completa contra el emulador, contar lecturas y escrituras en su UI, extrapolar a 50 participantes y comparar con los límites diarios del plan Spark
 - [ ] T093 Actualizar la estimación de D8 en `research.md` con la medición de T092, sustituyendo las cifras estimadas por las reales
 - [ ] T094 [P] Accesibilidad en `src/ui/shared/`: distinguir las opciones por **forma además de color**, como ya hacía el prototipo, para que la proyección en sala no dependa de la percepción del color

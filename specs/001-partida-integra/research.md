@@ -99,12 +99,28 @@ el incremento del contador. Las reglas atan las tres entre sí con `getAfter()` 
 `existsAfter()`, de modo que ninguna puede ocurrir sin las otras dos. FR-012 da al
 presentador la salida de ajustar el tope de una ronda en curso.
 
-**App Check queda diferido.** Entró en el diseño anterior como mitigación contra la
-fabricación masiva de identidades anónimas, pero esa amenaza la absorbió el contador
-exacto: el cupo ya no se puede rebasar ni ocupar sin entrar. Lo que quedaba era su
-costo —tokens de depuración en el emulador y un proveedor sin decidir— dentro de la fase
-que bloquea todas las historias. Se evalúa en Polish, con el proveedor gratuito del plan
-Spark, y solo si una medición o una prueba en sala muestran que hace falta.
+**App Check queda diferido, y su amenaza queda aceptada, no cerrada.** La distinción
+importa, porque decir que el rediseño la absorbió invitaría al siguiente lector a no
+mirar.
+
+Lo que el contador exacto cerró es que **un** participante infle `participantCount` sin
+entrar, o entre sin contarse. Lo que **no** cierra es que una sola persona cree muchas
+identidades anónimas y cada una entre legítimamente: cada entrada crea su participante,
+reserva su apodo y se cuenta, así que las reglas no tienen nada que objetar. El tope
+pasa entonces de ser la protección a ser el techo del daño: con el cupo lleno de
+identidades fabricadas, los participantes reales ven "sala llena". Y FR-012 no lo
+remedia, porque ampliar el tope solo añade plazas que el mismo script puede ocupar.
+
+Se acepta por **baja probabilidad en este contexto**, no por estar resuelto: sesión
+interna de capacitación, presencial, en una sala donde el presentador ve a los
+participantes. Un abuso así se detecta y se resuelve socialmente en el momento, que es
+el mismo razonamiento con el que Clarifications descartó tratar el abuso en general.
+
+El costo de App Check, en cambio, sí era concreto: tokens de depuración en el emulador y
+un proveedor sin decidir, ambos dentro de la fase que bloquea todas las historias. Por
+eso se mueve a Polish, con el proveedor gratuito del plan Spark. **Si el contexto de uso
+cambia** —sesiones remotas, enlace distribuido fuera de la sala, o participantes que no
+se ven entre sí— esta aceptación deja de sostenerse y App Check vuelve a ser necesario.
 
 **Rationale**: FR-011 prohíbe reconocer dispositivos o personas, así que la única
 barrera admisible es de cupo agregado. Pero un cupo solo sirve si el contador es fiel, y
@@ -266,4 +282,5 @@ respondí yo.
 1. **La aritmética de timestamps en reglas no está confirmada.** Es el primer spike, y de él depende D1.
 2. **Contención de escritura sobre el contador de la ronda.** El tope dejó de ser blando al atar la entrada con `getAfter()` (D4), pero el contador concentra escrituras en un documento. Hay que medir la entrada en ráfaga contra el emulador y ajustar el retroceso exponencial.
 3. **La corrección del puntaje no la verifica nadie más que el presentador.** Registrado en Complexity Tracking; es concesión sancionada por la constitución.
-4. **El alta del presentador y la inyección de `PRESENTER_UID`** no estaban resueltas. `firestore.rules` es un único artefacto que va al emulador y a producción, así que un literal obliga a que los tests usen el mismo `uid` que la cuenta real, o a plantillar las reglas por entorno. Es prerrequisito de toda la suite de reglas del presentador.
+4. **Ocupación del cupo con identidades anónimas fabricadas.** Aceptada por baja probabilidad en una sesión presencial, no cerrada por el diseño (D4). Revisar si el uso deja de ser presencial.
+5. **El alta del presentador y la inyección de `PRESENTER_UID`** no estaban resueltas. `firestore.rules` es un único artefacto que va al emulador y a producción, así que un literal obliga a que los tests usen el mismo `uid` que la cuenta real, o a plantillar las reglas por entorno. Es prerrequisito de toda la suite de reglas del presentador.

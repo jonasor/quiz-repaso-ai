@@ -33,7 +33,7 @@ reglas, y está registrada en Complexity Tracking.
 
 **Language/Version**: TypeScript 5.x, ES2022
 
-**Primary Dependencies**: React 18, Vite 5, Firebase JS SDK 10 (Firestore, Auth). App Check queda **diferido**: entró como mitigación contra la fabricación masiva de identidades, y el rediseño de la entrada con `getAfter()` absorbió esa amenaza.
+**Primary Dependencies**: React 18, Vite 5, Firebase JS SDK 10 (Firestore, Auth). App Check queda **diferido** a Polish: su amenaza —ocupar el cupo con identidades anónimas fabricadas— se **acepta por baja probabilidad** en una sesión presencial, no queda cerrada por el diseño. Ver D4 en research.md.
 
 **Storage**: Cloud Firestore, plan Spark gratuito. Sin Cloud Functions y sin backend propio.
 
