@@ -133,6 +133,30 @@ describe('denegación 11 — la solución no cabe en el documento público (FR-0
   });
 });
 
+describe('T103 — el contenido publicado es inmutable (Constitución I)', () => {
+  // Una ronda en curso debe terminar con el cuestionario con el que empezó. Si el
+  // presentador pudiera sobrescribir un cuestionario publicado, esa garantía dependería
+  // de que el código de publicación nunca reutilice un id.
+  it('el presentador no puede sobrescribir los metadatos de un cuestionario publicado', async () => {
+    const db = asPresenter(env).firestore();
+    await assertFails(setDoc(doc(db, 'quizzes', QUIZ), { ...quizMeta(), title: 'Otro' }));
+  });
+
+  it('ni una pregunta publicada', async () => {
+    const db = asPresenter(env).firestore();
+    await assertFails(
+      setDoc(doc(db, 'quizzes', QUIZ, 'questions', '0'), { ...publicQuestion, text: 'Cambiada' }),
+    );
+  });
+
+  it('ni una solución publicada', async () => {
+    const db = asPresenter(env).firestore();
+    await assertFails(
+      setDoc(doc(db, 'quizzes', QUIZ, 'solutions', '0'), { ...solution, correctIndex: 1 }),
+    );
+  });
+});
+
 describe('autorización 8 y permisos que T026 abre', () => {
   it('el presentador lee solutions/{n} (autorización 8)', async () => {
     const db = asPresenter(env).firestore();

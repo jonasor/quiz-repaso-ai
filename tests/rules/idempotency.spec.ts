@@ -16,10 +16,12 @@ import {
 } from 'firebase/firestore';
 import { asAnon, asPresenter, setupTestEnv } from './helpers';
 import { parseQuizFile } from '../../src/domain/quizFile';
-import { publishQuiz } from '../../src/data/quizzes';
+import { newQuizId, publishQuiz } from '../../src/data/quizzes';
 import {
+  adjustMaxParticipants,
   archiveRound,
   joinRound,
+  newRoundId,
   openQuestion,
   publishRound,
   revealQuestion,
@@ -159,5 +161,90 @@ describe('cada acción, dos veces (FR-018)', () => {
     const archived = await snapshot(`rounds/${roundId}`);
     expect(await archiveRound(presenter(), roundId)).toBe('stale');
     expect(await snapshot(`rounds/${roundId}`)).toEqual(archived);
+  });
+});
+
+describe('T106 — publicar y ajustar el tope, dos veces (Constitución V, FR-018)', () => {
+  const quizFile = {
+    title: 'T',
+    questions: [{ text: 'Q', options: ['A', 'B'], correctIndex: 0, teachingNote: 'N' }],
+  };
+
+  async function count(collectionPath: string) {
+    let n = -1;
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      n = (await getDocs(collection(ctx.firestore(), collectionPath))).size;
+    });
+    return n;
+  }
+
+  it('publicar el mismo cuestionario dos veces deja uno, idéntico (T105)', async () => {
+    const parsed = parseQuizFile(quizFile);
+    if (!parsed.ok) throw new Error('inválido');
+    const id = newQuizId(presenter());
+    expect(await publishQuiz(presenter(), parsed.quiz, id)).toBe(id);
+    const first = await snapshot(`quizzes/${id}`, ['questions', 'solutions']);
+    expect(await publishQuiz(presenter(), parsed.quiz, id)).toBe(id);
+    expect(await count('quizzes')).toBe(1);
+    expect(await snapshot(`quizzes/${id}`, ['questions', 'solutions'])).toEqual(first);
+  });
+
+  it('un doble clic simultáneo al publicar el cuestionario deja uno (T105)', async () => {
+    const parsed = parseQuizFile(quizFile);
+    if (!parsed.ok) throw new Error('inválido');
+    const id = newQuizId(presenter());
+    const ids = await Promise.all([
+      publishQuiz(presenter(), parsed.quiz, id),
+      publishQuiz(presenter(), parsed.quiz, id),
+    ]);
+    expect(ids).toEqual([id, id]);
+    expect(await count('quizzes')).toBe(1);
+  });
+
+  it('publicar la misma ronda dos veces deja una, sin archivar nada de más (T104)', async () => {
+    const { quizId } = await setup();
+    const before = await count('rounds');
+    const id = newRoundId(presenter());
+    expect(await publishRound(presenter(), quizId, 40, id)).toBe(id);
+    const first = await snapshot(`rounds/${id}`);
+    expect(await publishRound(presenter(), quizId, 40, id)).toBe(id);
+    expect(await count('rounds')).toBe(before + 1);
+    expect(await snapshot(`rounds/${id}`)).toEqual(first);
+  });
+
+  it('repetir una publicación vieja no devuelve el puntero a esa ronda (T104)', async () => {
+    const { quizId } = await setup();
+    const old = newRoundId(presenter());
+    await publishRound(presenter(), quizId, 40, old);
+    const newer = await publishRound(presenter(), quizId, 40);
+    await publishRound(presenter(), quizId, 40, old);
+    const pointer = await snapshot('config/activeRound');
+    expect(pointer['doc']).toEqual({ roundId: newer });
+  });
+
+  it('un doble clic simultáneo al publicar la ronda deja una (T104)', async () => {
+    const { quizId } = await setup();
+    const before = await count('rounds');
+    const id = newRoundId(presenter());
+    const ids = await Promise.all([
+      publishRound(presenter(), quizId, 40, id),
+      publishRound(presenter(), quizId, 40, id),
+    ]);
+    expect(ids).toEqual([id, id]);
+    expect(await count('rounds')).toBe(before + 1);
+  });
+
+  it('ajustar el tope al mismo valor dos veces, y a la vez, termina sin error ni cambios (T106)', async () => {
+    const { roundId } = await setup();
+    await adjustMaxParticipants(presenter(), roundId, 12);
+    const first = await snapshot(`rounds/${roundId}`);
+    await expect(adjustMaxParticipants(presenter(), roundId, 12)).resolves.toBeUndefined();
+    await expect(
+      Promise.all([
+        adjustMaxParticipants(presenter(), roundId, 12),
+        adjustMaxParticipants(presenter(), roundId, 12),
+      ]),
+    ).resolves.toBeDefined();
+    expect(await snapshot(`rounds/${roundId}`)).toEqual(first);
   });
 });

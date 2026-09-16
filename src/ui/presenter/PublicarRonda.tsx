@@ -4,12 +4,14 @@
 import { useState } from 'react';
 import type { Firestore } from '../../data/types';
 import { listQuizzes } from '../../data/quizzes';
-import { DEFAULT_MAX_PARTICIPANTS, publishRound } from '../../data/rounds';
+import { DEFAULT_MAX_PARTICIPANTS, newRoundId, publishRound } from '../../data/rounds';
 import { Cargando, Estado, describeError } from '../shared/Estados';
 import { usePromise } from '../shared/hooks';
 
 export function PublicarRonda({ db, onPublished }: { db: Firestore; onPublished: () => void }) {
   const quizzes = usePromise(() => listQuizzes(db), [db]);
+  // Un id por formulario, no por clic: un doble clic publica la misma ronda (T104).
+  const [roundId] = useState(() => newRoundId(db));
   const [quizId, setQuizId] = useState('');
   const [max, setMax] = useState(String(DEFAULT_MAX_PARTICIPANTS));
   const [busy, setBusy] = useState(false);
@@ -36,7 +38,7 @@ export function PublicarRonda({ db, onPublished }: { db: Firestore; onPublished:
     setBusy(true);
     setError(null);
     try {
-      await publishRound(db, selected, maxN);
+      await publishRound(db, selected, maxN, roundId);
       onPublished();
     } catch (e) {
       setError(describeError(e));

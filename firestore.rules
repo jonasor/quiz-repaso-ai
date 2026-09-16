@@ -84,28 +84,31 @@ service cloud.firestore {
     // código de publicación, garanticen que la respuesta correcta nunca llegue al
     // dispositivo de un participante (FR-045, FR-051, FR-066).
 
+    // Inmutable una vez publicado (T103): sin update, una ronda en curso termina con el
+    // cuestionario con el que empezó por garantía del servidor, no porque el código de
+    // publicación genere siempre un id nuevo (Constitución I).
     match /quizzes/{q} {
       allow read: if request.auth != null;
-      allow create, update: if isPresenter()
+      allow create: if isPresenter()
         && hasExactly(['title', 'questionCount', 'publishedAt']);
-      allow delete: if false;
+      allow update, delete: if false;
 
       match /questions/{n} {
         allow read: if request.auth != null;
         // Exactamente estos cuatro campos. Un documento público con correctIndex o
         // teachingNote se rechaza aquí aunque lo escriba el presentador:
         // denegación 11.
-        allow create, update: if isPresenter()
+        allow create: if isPresenter()
           && hasExactly(['index', 'text', 'options', 'timeLimitSec']);
-        allow delete: if false;
+        allow update, delete: if false;
       }
 
       match /solutions/{n} {
         // Lectura exclusiva del presentador: denegación 1, autorización 8.
         allow read: if isPresenter();
-        allow create, update: if isPresenter()
+        allow create: if isPresenter()
           && hasExactly(['correctIndex', 'teachingNote']);
-        allow delete: if false;
+        allow update, delete: if false;
       }
     }
 

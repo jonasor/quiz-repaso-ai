@@ -10,6 +10,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   onSnapshot,
   orderBy,
@@ -105,48 +106,70 @@ export async function listRounds(db: Firestore): Promise<RoundWithId[]> {
 
 // ---------- Publicación (T048) ----------
 
+/** Id para una publicación. Se genera **una vez por formulario**, no por clic (T104). */
+export function newRoundId(db: Firestore): string {
+  return doc(collection(db, 'rounds')).id;
+}
+
 /**
  * Publica una ronda nueva en una transacción: la crea activa, mueve el puntero y
  * archiva la anterior si seguía activa (FR-021, FR-022). Las reglas atan las tres
  * escrituras; ninguna vale por separado.
+ *
+ * **Idempotente** (T104, FR-018): el id lo fija quien llama, una vez por formulario. Si la
+ * ronda ya existe, la transacción termina sin escribir nada. Eso cubre el doble clic, y
+ * también repetir una publicación vieja: no crea una ronda de más ni devuelve el puntero
+ * a una ronda que ya fue reemplazada.
  */
 export async function publishRound(
   db: Firestore,
   quizId: string,
   maxParticipants: number = DEFAULT_MAX_PARTICIPANTS,
+  roundId: string = newRoundId(db),
 ): Promise<string> {
   if (!Number.isInteger(maxParticipants) || maxParticipants <= 0) {
     throw new Error('el tope de participantes debe ser un entero positivo');
   }
   const pointerRef = doc(db, 'config', 'activeRound');
-  const newRef = doc(collection(db, 'rounds'));
-  await runTransaction(db, async (tx) => {
-    const quizSnap = await tx.get(doc(db, 'quizzes', quizId));
-    if (!quizSnap.exists()) throw new Error('el cuestionario no existe');
-    const pointer = await tx.get(pointerRef);
-    const prevId = pointer.exists() ? (pointer.data()['roundId'] as string) : null;
-    const prevRef = prevId === null ? null : doc(db, 'rounds', prevId);
-    const prev = prevRef === null ? null : await tx.get(prevRef);
+  const newRef = doc(db, 'rounds', roundId);
+  const attempt = () =>
+    runTransaction(db, async (tx) => {
+      if ((await tx.get(newRef)).exists()) return;
+      const quizSnap = await tx.get(doc(db, 'quizzes', quizId));
+      if (!quizSnap.exists()) throw new Error('el cuestionario no existe');
+      const pointer = await tx.get(pointerRef);
+      const prevId = pointer.exists() ? (pointer.data()['roundId'] as string) : null;
+      const prevRef = prevId === null ? null : doc(db, 'rounds', prevId);
+      const prev = prevRef === null ? null : await tx.get(prevRef);
 
-    tx.set(newRef, {
-      quizId,
-      questionCount: quizSnap.data()['questionCount'] as number,
-      phase: 'lobby',
-      currentIndex: -1,
-      openedAt: null,
-      timeLimitSec: null,
-      maxParticipants,
-      participantCount: 0,
-      active: true,
-      startedAt: serverTimestamp(),
-      endedAt: null,
+      tx.set(newRef, {
+        quizId,
+        questionCount: quizSnap.data()['questionCount'] as number,
+        phase: 'lobby',
+        currentIndex: -1,
+        openedAt: null,
+        timeLimitSec: null,
+        maxParticipants,
+        participantCount: 0,
+        active: true,
+        startedAt: serverTimestamp(),
+        endedAt: null,
+      });
+      tx.set(pointerRef, { roundId });
+      if (prevRef !== null && prev?.exists() === true && prev.data()['active'] === true) {
+        tx.update(prevRef, { phase: 'archived', active: false });
+      }
     });
-    tx.set(pointerRef, { roundId: newRef.id });
-    if (prevRef !== null && prev?.exists() === true && prev.data()['active'] === true) {
-      tx.update(prevRef, { phase: 'archived', active: false });
-    }
-  });
-  return newRef.id;
+  try {
+    await attempt();
+  } catch (e) {
+    // Dos envíos a la vez: el perdedor escribe sobre un puntero que ya cambió y las reglas
+    // lo rechazan antes de detectar el conflicto (el mismo efecto que en la entrada). Si
+    // la ronda ya existe, el otro envío la publicó.
+    if (isPermissionDenied(e) && (await getDoc(newRef)).exists()) return roundId;
+    throw e;
+  }
+  return roundId;
 }
 
 // ---------- Conducción (T047) ----------
@@ -214,7 +237,13 @@ export async function archiveRound(db: Firestore, roundId: string): Promise<Tran
   });
 }
 
-/** FR-012: la salida operativa cuando el cupo se llena de forma indebida. */
+/**
+ * FR-012: la salida operativa cuando el cupo se llena de forma indebida.
+ *
+ * **Idempotente** (T106): fijar el tope que ya tiene termina sin escribir y sin error. Las
+ * reglas rechazan una actualización sin cambios, así que sin esta comprobación un doble
+ * clic mostraba "no tienes permiso".
+ */
 export async function adjustMaxParticipants(
   db: Firestore,
   roundId: string,
@@ -223,7 +252,16 @@ export async function adjustMaxParticipants(
   if (!Number.isInteger(maxParticipants) || maxParticipants <= 0) {
     throw new Error('el tope de participantes debe ser un entero positivo');
   }
-  await updateDoc(doc(db, 'rounds', roundId), { maxParticipants });
+  const ref = doc(db, 'rounds', roundId);
+  const current = async () => (await getDoc(ref)).data()?.['maxParticipants'] as number | undefined;
+  if ((await current()) === maxParticipants) return;
+  try {
+    await updateDoc(ref, { maxParticipants });
+  } catch (e) {
+    // Dos envíos a la vez: el otro ya lo fijó.
+    if (isPermissionDenied(e) && (await current()) === maxParticipants) return;
+    throw e;
+  }
 }
 
 // ---------- Entrada (T050) ----------

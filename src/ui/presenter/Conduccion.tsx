@@ -27,6 +27,7 @@ import { useActiveRound, useNow, usePolling, usePromise, useSubscription } from 
 import { Distribution } from '../shared/Option';
 import { PodiumView } from '../shared/PodiumView';
 import { Debrief } from './Debrief';
+import { ReproyectarEnVivo } from './Reproyeccion';
 
 export function Conduccion({ db, onPublishRound }: { db: Firestore; onPublishRound: () => void }) {
   const active = useActiveRound();
@@ -248,6 +249,15 @@ function Partida({ db, current }: { db: Firestore; current: RoundWithId }) {
             </ol>
           )}
         </div>
+      )}
+
+      {(round.phase === 'open' || round.phase === 'revealed') && (
+        <ReproyectarEnVivo
+          db={db}
+          roundId={roundId}
+          quizId={round.quizId}
+          revealedKey={`${n}-${calificada}`}
+        />
       )}
 
       {round.phase === 'podium' && (

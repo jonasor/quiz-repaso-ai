@@ -44,9 +44,9 @@ bloquearía entradas legítimas.
 
 | Ruta | read | create | update | delete |
 |---|---|---|---|---|
-| `quizzes/{q}` | cualquiera autenticado | `isPresenter()` | `isPresenter()` | nunca |
-| `quizzes/{q}/questions/{n}` | cualquiera autenticado | `isPresenter()` y campos exactos | `isPresenter()` y campos exactos | nunca |
-| `quizzes/{q}/solutions/{n}` | **`isPresenter()`** | `isPresenter()` | `isPresenter()` | nunca |
+| `quizzes/{q}` | cualquiera autenticado | `isPresenter()` y campos exactos | **nunca** | nunca |
+| `quizzes/{q}/questions/{n}` | cualquiera autenticado | `isPresenter()` y campos exactos | **nunca** | nunca |
+| `quizzes/{q}/solutions/{n}` | **`isPresenter()`** | `isPresenter()` y campos exactos | **nunca** | nunca |
 | `config/activeRound` | cualquiera autenticado | `isPresenter()` atado a la creación de la ronda | `isPresenter()` atado a la creación de la ronda | nunca |
 | `rounds/{r}` | `get`: cualquiera autenticado; `list`: `isPresenter()` | `isPresenter()` y el puntero apunta aquí | `isPresenter()` con transición legal o ajuste de tope, **o** `isAnon()` solo para incrementar `participantCount` atado a su propia entrada | nunca |
 | `rounds/{r}/participants/{uid}` | cualquiera autenticado | `isOwner(uid)` con validaciones de entrada | nunca | nunca |
@@ -58,6 +58,12 @@ bloquearía entradas legítimas.
 | cualquier otra ruta | nunca | nunca | nunca | nunca |
 
 Cierre explícito al final: `match /{document=**} { allow read, write: if false; }`.
+
+**El contenido publicado es inmutable** (T103, Constitución I). Un cuestionario, sus
+preguntas y sus soluciones solo admiten `create`. Así, una ronda en curso termina con el
+cuestionario con el que empezó por garantía del servidor. Antes, el contrato permitía
+`update` al presentador, y esa garantía dependía de que `publishQuiz` nunca reutilizara un
+id. Corregir un cuestionario es publicar uno nuevo.
 
 **`delete` nunca está permitido en ninguna ruta.** Retirar una ronda es una operación
 de consola, no de la aplicación. Esto sostiene FR-073 y hace que ningún cliente pueda

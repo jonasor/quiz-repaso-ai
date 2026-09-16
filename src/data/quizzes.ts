@@ -14,23 +14,39 @@ import {
 } from 'firebase/firestore';
 import { splitForPublication, type ValidatedQuiz } from '../domain/quizFile';
 import type { PublicQuestion, Solution } from '../domain/types';
+import { isPermissionDenied } from './errors';
 import { toPublicQuestion, toQuizSummary, toSolution, type QuizSummary } from './mappers';
 
 /** Un lote admite 500 escrituras: metadatos más pregunta y solución por pregunta. */
 export const MAX_QUESTIONS_PER_QUIZ = 249;
 
+/** Id para una publicación. Se genera **una vez por archivo cargado**, no por clic (T105). */
+export function newQuizId(db: Firestore): string {
+  return doc(collection(db, 'quizzes')).id;
+}
+
 /**
  * Publica un cuestionario ya validado, **todo o nada** (FR-069): metadatos, preguntas
- * públicas y soluciones van en un mismo lote atómico. Cada publicación crea un
- * cuestionario nuevo; nunca sobrescribe uno existente, así que una ronda en curso
- * termina con el cuestionario con el que empezó.
+ * públicas y soluciones van en un mismo lote atómico.
+ *
+ * **Idempotente** (T105, FR-018): el id lo fija quien llama, una vez por archivo. Publicar
+ * dos veces el mismo id —un doble clic, o dos a la vez— deja un único cuestionario, y la
+ * segunda llamada devuelve el mismo id sin escribir. El contenido publicado es inmutable
+ * en las reglas (T103), así que el segundo lote no puede sobrescribir el primero: se
+ * rechaza, y eso se interpreta como "ya estaba publicado".
  */
-export async function publishQuiz(db: Firestore, quiz: ValidatedQuiz): Promise<string> {
+export async function publishQuiz(
+  db: Firestore,
+  quiz: ValidatedQuiz,
+  quizId: string = newQuizId(db),
+): Promise<string> {
   if (quiz.questions.length > MAX_QUESTIONS_PER_QUIZ) {
     throw new Error(`un cuestionario admite hasta ${MAX_QUESTIONS_PER_QUIZ} preguntas`);
   }
+  const quizRef = doc(db, 'quizzes', quizId);
+  if ((await getDoc(quizRef)).exists()) return quizId;
+
   const { meta, questions, solutions } = splitForPublication(quiz);
-  const quizRef = doc(collection(db, 'quizzes'));
   const batch = writeBatch(db);
   batch.set(quizRef, { ...meta, publishedAt: serverTimestamp() });
   questions.forEach((q, i) => {
@@ -47,8 +63,14 @@ export async function publishQuiz(db: Firestore, quiz: ValidatedQuiz): Promise<s
       teachingNote: s.teachingNote,
     });
   });
-  await batch.commit();
-  return quizRef.id;
+  try {
+    await batch.commit();
+  } catch (e) {
+    // Dos envíos a la vez: el otro ya lo publicó.
+    if (isPermissionDenied(e) && (await getDoc(quizRef)).exists()) return quizId;
+    throw e;
+  }
+  return quizId;
 }
 
 export async function listQuizzes(db: Firestore): Promise<QuizSummary[]> {

@@ -5,12 +5,12 @@
  * vista de solo lectura sobre lo ya escrito: no toca la fase, ni el índice, ni puntajes.
  */
 import { useState } from 'react';
-import { getQuestions, getSolution } from '../../data/quizzes';
+import { getQuestions } from '../../data/quizzes';
 import { getResults } from '../../data/scores';
 import type { Firestore } from '../../data/types';
 import { Cargando, SinConexion } from '../shared/Estados';
 import { usePromise } from '../shared/hooks';
-import { Distribution } from '../shared/Option';
+import { ReproyeccionPanel } from './Reproyeccion';
 
 export function Debrief({
   db,
@@ -29,11 +29,6 @@ export function Debrief({
     return { questions, results };
   }, [db, roundId, quizId]);
   const [proyectada, setProyectada] = useState<number | null>(null);
-  const nota = usePromise(proyectada === null ? null : () => getSolution(db, quizId, proyectada), [
-    db,
-    quizId,
-    proyectada,
-  ]);
 
   if (data.error !== null) return <SinConexion />;
   if (data.value === null) return <Cargando />;
@@ -91,30 +86,13 @@ export function Debrief({
       )}
 
       {actual !== undefined && actualR !== undefined && (
-        <div className="panel" style={{ marginTop: 18 }} aria-live="polite">
-          <div className="fila" style={{ justifyContent: 'space-between' }}>
-            <p className="eyebrow">Reproyección · solo lectura · pregunta {actual.index + 1}</p>
-            <button
-              type="button"
-              className="btn sec"
-              style={{ padding: '6px 12px' }}
-              onClick={() => setProyectada(null)}
-            >
-              Cerrar
-            </button>
-          </div>
-          <div className="qtexto">{actual.text}</div>
-          <Distribution
-            options={actual.options}
-            distribution={actualR.distribution}
-            correctIndex={actualR.correctIndex}
-          />
-          <p className="aviso">
-            Acertó el {actualR.correctPct} % de {actualR.answerCount}{' '}
-            {actualR.answerCount === 1 ? 'respuesta' : 'respuestas'}.
-          </p>
-          {nota.value !== null && <div className="nota-debrief">{nota.value.teachingNote}</div>}
-        </div>
+        <ReproyeccionPanel
+          db={db}
+          quizId={quizId}
+          question={actual}
+          result={actualR}
+          onClose={() => setProyectada(null)}
+        />
       )}
     </div>
   );

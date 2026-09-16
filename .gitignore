@@ -32,3 +32,10 @@ pubsub-debug.log
 # --- Node ---
 node_modules/
 dist/
+
+# --- Entorno y artefactos ---
+# La configuración de producción de Firebase va en variables VITE_* por entorno.
+.env*
+!.env.example
+*.log
+coverage/

@@ -6,12 +6,14 @@
  */
 import { useState, type ChangeEvent } from 'react';
 import type { Firestore } from '../../data/types';
-import { publishQuiz } from '../../data/quizzes';
+import { newQuizId, publishQuiz } from '../../data/quizzes';
 import { parseQuizFile, type ValidatedQuiz, type ValidationError } from '../../domain/quizFile';
 import { describeError } from '../shared/Estados';
 
 export function PublicarQuiz({ db, onPublished }: { db: Firestore; onPublished: () => void }) {
   const [quiz, setQuiz] = useState<ValidatedQuiz | null>(null);
+  // Un id por archivo cargado, no por clic: un doble clic publica el mismo cuestionario (T105).
+  const [quizId, setQuizId] = useState(() => newQuizId(db));
   const [errors, setErrors] = useState<ValidationError[]>([]);
   const [fileName, setFileName] = useState('');
   const [busy, setBusy] = useState(false);
@@ -32,8 +34,10 @@ export function PublicarQuiz({ db, onPublished }: { db: Firestore; onPublished: 
       return;
     }
     const parsed = parseQuizFile(raw);
-    if (parsed.ok) setQuiz(parsed.quiz);
-    else setErrors(parsed.errors);
+    if (parsed.ok) {
+      setQuiz(parsed.quiz);
+      setQuizId(newQuizId(db));
+    } else setErrors(parsed.errors);
   }
 
   async function publicar() {
@@ -41,7 +45,7 @@ export function PublicarQuiz({ db, onPublished }: { db: Firestore; onPublished: 
     setBusy(true);
     setPublishError(null);
     try {
-      await publishQuiz(db, quiz);
+      await publishQuiz(db, quiz, quizId);
       onPublished();
     } catch (e) {
       setPublishError(describeError(e));
