@@ -1,0 +1,375 @@
+rules_version = '2';
+
+// Reglas de la partida. Contrato: specs/001-partida-integra/contracts/firestore-rules.md
+//
+// Contiene los predicados, el catálogo de apodos y las reglas de cada colección, con
+// el cierre por defecto al final. Cada permiso tiene su test en tests/rules/.
+//
+// Principio IV: este archivo no se modifica sin modificar tests/rules/.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Principales ----------
+
+    function isAnon() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    // D10: la autoridad del presentador es un custom claim, no un uid literal.
+    // Así este archivo es idéntico en el emulador y en producción, no cuesta
+    // ningún get(), y un cliente no puede concedérselo.
+    function isPresenter() {
+      return request.auth != null && request.auth.token.presenter == true;
+    }
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // ---------- Catálogo de apodos ----------
+    //
+    // GENERADO desde src/domain/nickname.ts. No editar a mano.
+    // tests/rules/catalog-sync.spec.ts falla si las dos copias divergen: una
+    // divergencia silenciosa rompería FR-054 o dejaría fuera entradas legítimas.
+
+      function ADJECTIVES() {
+        return [
+        'Astuto', 'Valiente', 'Sereno', 'Curioso', 'Ágil', 'Sabio', 'Noble', 'Audaz', 'Tenaz',
+        'Risueño', 'Brioso', 'Cordial', 'Diestro', 'Esbelto', 'Fiel', 'Gentil', 'Hábil',
+        'Intrépido', 'Jovial', 'Leal', 'Lúcido', 'Magnánimo', 'Nítido', 'Óptimo', 'Paciente',
+        'Pícaro', 'Prudente', 'Rápido', 'Recio', 'Robusto', 'Sagaz', 'Sincero', 'Sobrio',
+        'Solemne', 'Sutil', 'Templado', 'Terco', 'Tierno', 'Tranquilo', 'Vivaz', 'Zumbón',
+        'Alegre', 'Amable', 'Animoso', 'Apacible', 'Ardiente', 'Atento', 'Aviado', 'Bravo',
+        'Cálido', 'Campante', 'Cauto', 'Certero', 'Claro', 'Colosal', 'Constante', 'Discreto',
+        'Dócil', 'Enérgico', 'Errante', 'Firme', 'Franco', 'Fresco', 'Garboso', 'Grácil',
+        'Grato', 'Humilde', 'Ilustre', 'Impávido', 'Íntegro', 'Justo', 'Ligero', 'Locuaz',
+        'Luminoso'
+        ];
+      }
+
+      function ANIMALS() {
+        return [
+        'Zorro', 'Lince', 'Búho', 'Tejón', 'Halcón', 'Nutria', 'Erizo', 'Ciervo', 'Jabalí',
+        'Lobo', 'Garza', 'Mirlo', 'Tucán', 'Colibrí', 'Pelícano', 'Cormorán', 'Flamenco',
+        'Ibis', 'Quetzal', 'Jilguero', 'Ruiseñor', 'Alondra', 'Cernícalo', 'Águila', 'Puma',
+        'Ocelote', 'Coatí', 'Tapir', 'Capibara', 'Armadillo', 'Perezoso', 'Mono', 'Tucuxi',
+        'Delfín', 'Marsopa', 'Foca', 'Morsa', 'Narval', 'Beluga', 'Orca', 'Manatí', 'Dugongo',
+        'Pingüino', 'Frailecillo', 'Cigüeña', 'Grulla', 'Avestruz', 'Emú', 'Casuario', 'Kiwi',
+        'Loro', 'Guacamayo', 'Cacatúa', 'Periquito', 'Canario', 'Gorrión', 'Golondrina',
+        'Vencejo', 'Abejaruco', 'Martín', 'Oropéndola', 'Estornino', 'Urraca', 'Arrendajo',
+        'Cuervo', 'Grajo', 'Chova', 'Trepador', 'Agateador', 'Herrerillo', 'Carbonero',
+        'Reyezuelo', 'Petirrojo', 'Zarcero'
+        ];
+      }
+
+    // Valida el apodo como dos campos, no como cadena a analizar. Es lo que hace
+    // imposible que un participante escriba texto arbitrario (FR-006, FR-054).
+    function inCatalog(d) {
+      return d.adjective in ADJECTIVES() && d.animal in ANIMALS();
+    }
+
+    // Igualdad exacta de claves: ni faltan ni sobran. hasOnly() es la garantía de
+    // seguridad (nada extra se cuela); hasAll() es la de integridad (nada falta).
+    function hasExactly(fields) {
+      return request.resource.data.keys().hasOnly(fields)
+          && request.resource.data.keys().hasAll(fields);
+    }
+
+    // ---------- Cuestionario (T026) ----------
+    //
+    // Contenido reutilizable. Una pregunta vive partida en dos documentos (D3): el
+    // público y la solución. Esa separación es lo que permite que las reglas, y no el
+    // código de publicación, garanticen que la respuesta correcta nunca llegue al
+    // dispositivo de un participante (FR-045, FR-051, FR-066).
+
+    // Inmutable una vez publicado (T103): sin update, una ronda en curso termina con el
+    // cuestionario con el que empezó por garantía del servidor, no porque el código de
+    // publicación genere siempre un id nuevo (Constitución I).
+    match /quizzes/{q} {
+      allow read: if request.auth != null;
+      allow create: if isPresenter()
+        && hasExactly(['title', 'questionCount', 'publishedAt']);
+      allow update, delete: if false;
+
+      match /questions/{n} {
+        allow read: if request.auth != null;
+        // Exactamente estos cuatro campos. Un documento público con correctIndex o
+        // teachingNote se rechaza aquí aunque lo escriba el presentador:
+        // denegación 11.
+        allow create: if isPresenter()
+          && hasExactly(['index', 'text', 'options', 'timeLimitSec']);
+        allow update, delete: if false;
+      }
+
+      match /solutions/{n} {
+        // Lectura exclusiva del presentador: denegación 1, autorización 8.
+        allow read: if isPresenter();
+        allow create: if isPresenter()
+          && hasExactly(['correctIndex', 'teachingNote']);
+        allow update, delete: if false;
+      }
+    }
+
+    // ---------- Ronda activa (T028) ----------
+    //
+    // Las reglas no pueden preguntar "¿hay otro documento con active == true?". Un
+    // puntero único convierte esa pregunta en una lectura de documento. Publicar una
+    // ronda mueve el puntero, y las dos escrituras se apuntan mutuamente con
+    // getAfter(): ninguna vale por separado (FR-021, FR-022).
+
+    function activePointer() {
+      return /databases/$(database)/documents/config/activeRound;
+    }
+
+    match /config/activeRound {
+      allow read: if request.auth != null;
+      allow create, update: if isPresenter()
+        && hasExactly(['roundId'])
+        && request.resource.data.roundId is string
+        && getAfter(/databases/$(database)/documents/rounds/$(request.resource.data.roundId))
+             .data.active == true;
+      allow delete: if false;
+    }
+
+    // ---------- Ronda ----------
+
+    function round(r) {
+      return get(/databases/$(database)/documents/rounds/$(r)).data;
+    }
+
+    // El instante de cierre es dato derivado de openedAt y timeLimitSec, ambos del
+    // servidor. Nadie lo ejecuta (FR-015). Confirmado por el spike T011.
+    function withinDeadline(r) {
+      return request.time.toMillis()
+           < round(r).openedAt.toMillis() + round(r).timeLimitSec * 1000;
+    }
+
+    match /rounds/{r} {
+
+      function participantPath() {
+        return /databases/$(database)/documents/rounds/$(r)/participants/$(request.auth.uid);
+      }
+
+      // "Nace en esta transacción". existsAfter() a secas también es verdadero para
+      // lo que ya existía: por eso siempre en pareja con !exists() (denegaciones 21, 22).
+      function joinsNow() {
+        return !exists(participantPath()) && existsAfter(participantPath());
+      }
+
+      function changed() {
+        return request.resource.data.diff(resource.data).affectedKeys();
+      }
+
+      function resultExists(n) {
+        return exists(/databases/$(database)/documents/rounds/$(r)/results/$(string(n)));
+      }
+
+      // Abrir una pregunta: índice esperado, instante del servidor y el tiempo límite
+      // de la propia pregunta publicada, no uno que elija el cliente.
+      function opensQuestion(index) {
+        return changed().hasOnly(['phase', 'currentIndex', 'openedAt', 'timeLimitSec'])
+          && request.resource.data.phase == 'open'
+          && request.resource.data.currentIndex == index
+          && index < resource.data.questionCount
+          && request.resource.data.openedAt == request.time
+          && request.resource.data.timeLimitSec
+               == get(/databases/$(database)/documents/quizzes/$(resource.data.quizId)/questions/$(string(index)))
+                    .data.timeLimitSec;
+      }
+
+      // Tabla de transiciones del contrato (T030). Repetir la fase actual no casa con
+      // ninguna rama: es el doble clic, y se rechaza (FR-018). Nada sale de archived.
+      function legalTransition() {
+        return (resource.data.phase == 'lobby' && opensQuestion(0))
+          || (resource.data.phase == 'open'
+              && changed().hasOnly(['phase'])
+              && request.resource.data.phase == 'revealed')
+          || (resource.data.phase == 'revealed'
+              && resultExists(resource.data.currentIndex)
+              && opensQuestion(resource.data.currentIndex + 1))
+          || (resource.data.phase == 'revealed'
+              && resultExists(resource.data.currentIndex)
+              && resource.data.currentIndex + 1 == resource.data.questionCount
+              && changed().hasOnly(['phase', 'endedAt'])
+              && request.resource.data.phase == 'podium'
+              && request.resource.data.endedAt == request.time)
+          || (resource.data.phase != 'archived'
+              && changed().hasOnly(['phase', 'active'])
+              && request.resource.data.phase == 'archived'
+              && request.resource.data.active == false);
+      }
+
+      // FR-012: la salida operativa del modelo de amenaza.
+      function adjustsCap() {
+        return resource.data.phase != 'archived'
+          // hasAll además de hasOnly: una actualización sin cambios tiene affectedKeys
+          // vacío, que cumple cualquier hasOnly(). Sin esto, el doble clic pasaría por aquí.
+          && changed().hasOnly(['maxParticipants'])
+          && changed().hasAll(['maxParticipants'])
+          && request.resource.data.maxParticipants is int
+          && request.resource.data.maxParticipants > 0
+          && request.resource.data.maxParticipants >= resource.data.participantCount;
+      }
+
+      // El incremento del contador, atado al acto de entrar (T032, D4).
+      function joinIncrement() {
+        return isAnon()
+          && resource.data.phase != 'archived'
+          && changed().hasOnly(['participantCount'])
+          && request.resource.data.participantCount == resource.data.participantCount + 1
+          && joinsNow();
+      }
+
+      allow get: if request.auth != null;
+      // Listar rondas es para la lista de rondas pasadas del presentador (FR-074).
+      allow list: if isPresenter();
+
+      allow create: if isPresenter()
+        && hasExactly(['quizId', 'questionCount', 'phase', 'currentIndex', 'openedAt',
+                       'timeLimitSec', 'maxParticipants', 'participantCount', 'active',
+                       'startedAt', 'endedAt'])
+        && request.resource.data.phase == 'lobby'
+        && request.resource.data.currentIndex == -1
+        && request.resource.data.openedAt == null
+        && request.resource.data.timeLimitSec == null
+        && request.resource.data.endedAt == null
+        && request.resource.data.participantCount == 0
+        && request.resource.data.maxParticipants is int
+        && request.resource.data.maxParticipants > 0
+        && request.resource.data.active == true
+        && request.resource.data.startedAt == request.time
+        && request.resource.data.questionCount
+             == get(/databases/$(database)/documents/quizzes/$(request.resource.data.quizId))
+                  .data.questionCount
+        // El puntero apunta aquí (denegación 23)...
+        && getAfter(activePointer()).data.roundId == r
+        // ...y si había ronda previa, queda archivada en el mismo acto (denegación 24).
+        && (!exists(activePointer())
+            || getAfter(/databases/$(database)/documents/rounds/$(get(activePointer()).data.roundId))
+                 .data.active == false);
+
+      allow update: if (isPresenter() && (legalTransition() || adjustsCap()))
+        || joinIncrement();
+
+      allow delete: if false;
+
+      // ---------- Entrada (T032) ----------
+
+      match /participants/{uid} {
+        allow read: if request.auth != null;
+        allow create: if isAnon() && isOwner(uid)
+          && hasExactly(['adjective', 'animal', 'joinedAt'])
+          && inCatalog(request.resource.data)
+          && request.resource.data.joinedAt == request.time
+          && round(r).phase != 'archived'
+          // Hay cupo (denegación 19).
+          && round(r).participantCount < round(r).maxParticipants
+          // Obliga a contarse (denegación 18).
+          && getAfter(/databases/$(database)/documents/rounds/$(r)).data.participantCount
+               == round(r).participantCount + 1
+          // La reserva existe y es MÍA (denegaciones 15 y 20).
+          && getAfter(/databases/$(database)/documents/rounds/$(r)/nicknames/$(
+               request.resource.data.adjective + '_' + request.resource.data.animal))
+               .data.uid == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      match /nicknames/{nick} {
+        allow read: if request.auth != null;
+        allow create: if isAnon()
+          && hasExactly(['uid'])
+          && request.resource.data.uid == request.auth.uid
+          // Solo al entrar (denegación 22)...
+          && joinsNow()
+          // ...y solo el apodo con el que entra: sin esto, una misma entrada podría
+          // reservar además apodos ajenos y dejarlos inservibles para los demás.
+          && nick == getAfter(participantPath()).data.adjective + '_'
+                   + getAfter(participantPath()).data.animal;
+        allow update, delete: if false;
+      }
+
+      // ---------- Respuestas (T035) ----------
+
+      match /answers/{answerId} {
+        // Validado por los spikes T011 y T012.
+        allow create: if isAnon()
+          && answerId == request.auth.uid + '_' + string(round(r).currentIndex)
+          // Solo quien entró responde: sin esto, una identidad que nunca pasó por el
+          // tope podría responder y ser calificada.
+          && exists(participantPath())
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.questionIndex == round(r).currentIndex
+          && round(r).phase == 'open'
+          && withinDeadline(r)
+          && request.resource.data.submittedAt == request.time
+          && request.resource.data.optionIndex is int
+          && request.resource.data.optionIndex >= 0
+          // Dentro de las opciones de la pregunta publicada: sin esto se aceptaba la
+          // opción 7 de una pregunta de 4.
+          && request.resource.data.optionIndex
+               < get(/databases/$(database)/documents/quizzes/$(round(r).quizId)/questions/$(
+                    string(round(r).currentIndex))).data.options.size()
+          && hasExactly(['uid', 'questionIndex', 'optionIndex', 'submittedAt']);
+
+        // Leer la propia se decide por la ruta, no por el contenido: así un
+        // participante puede comprobar tras recargar si su respuesta existe, aunque
+        // todavía no exista (FR-061). La de otro, nunca (denegación 2).
+        allow get: if isPresenter()
+          || (request.auth != null && answerId.split('_')[0] == request.auth.uid);
+        allow list: if isPresenter()
+          || (request.auth != null && resource.data.uid == request.auth.uid);
+
+        // La ausencia de update y delete es lo que hace cumplir FR-027 y FR-028
+        // sin ninguna condición adicional.
+        allow update, delete: if false;
+      }
+
+      // ---------- Resultados, puntajes y podio (T038) ----------
+
+      match /results/{n} {
+        allow read: if request.auth != null;
+        // Solo tras cerrar la admisión de respuestas, y solo para la pregunta en curso.
+        // Nunca update: revelar dos veces falla la segunda (denegación 13).
+        allow create: if isPresenter()
+          && hasExactly(['questionIndex', 'distribution', 'answerCount', 'correctIndex',
+                         'correctPct', 'revealedAt'])
+          && round(r).phase == 'revealed'
+          && n == string(round(r).currentIndex)
+          && request.resource.data.questionIndex == round(r).currentIndex
+          && request.resource.data.revealedAt == request.time;
+        allow update, delete: if false;
+      }
+
+      match /scores/{uid} {
+        // Por la ruta: el participante puede escuchar su puntaje antes de que exista.
+        allow read: if isPresenter() || isOwner(uid);
+        allow create, update: if isPresenter()
+          && hasExactly(['uid', 'adjective', 'animal', 'perQuestion', 'totalPoints',
+                         'totalElapsedMs', 'correctCount', 'rank'])
+          && request.resource.data.uid == uid;
+        allow delete: if false;
+      }
+
+      // Firestore no admite un documento en rounds/{r}/podium: la ruta necesita un id.
+      match /podium/{docId} {
+        allow read: if request.auth != null;
+        allow create, update: if isPresenter()
+          && docId == 'final'
+          && hasExactly(['top', 'participantCount', 'closedAt'])
+          && request.resource.data.closedAt == request.time;
+        allow delete: if false;
+      }
+    }
+
+    // ---------- Cierre por defecto ----------
+    //
+    // Todo lo no declarado arriba está denegado. Cada permiso que se abra a partir
+    // de aquí llega con su test de autorización, y cada denegación con el suyo.
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
