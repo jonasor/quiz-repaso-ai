@@ -375,7 +375,13 @@ emulador no reproduce la latencia de red real.
 
    **Límites de la medición.** El emulador no reproduce la latencia ni el rendimiento del servicio real, y su serialización de transacciones puede ser más lenta. La conclusión estructural —serialización sobre un documento— sí se traslada.
 
-   **Decisión pendiente, tal como la reserva D4 y T052.** Dos caminos:
+   **Decisión tomada (2026-09-16): se mantiene el contador exacto.** El tope sigue siendo una
+garantía de reglas (FR-010) y las denegaciones 17 a 19 siguen cerradas. SC-001 se sostiene
+operativamente: abrir la sala con antelación para que las entradas se repartan, con
+"entrando…" visible mientras dura el reintento. Se reabre si una sesión real muestra
+entradas en ráfaga que superen los 15 s.
+
+Caminos que se evaluaron:
    - **Mantener el contador exacto** (implementado) y mitigar operativamente: abrir la sala con antelación para que las entradas se repartan, y mostrar "entrando…" mientras dura el reintento. FR-010 sigue siendo una garantía de reglas.
    - **Contador aproximado**: la entrada deja de serializarse sobre un documento, SC-001 se cumple también en ráfaga, y el tope pasa a ser blando y apoyado solo en FR-012. Eso vuelve a abrir la fuga de las denegaciones 17 a 19 y exige reescribir esas reglas y sus tests.
 3. **La corrección del puntaje no la verifica nadie más que el presentador.** Registrado en Complexity Tracking; es concesión sancionada por la constitución.
