@@ -57,6 +57,21 @@ acepta, y que la misma respuesta con el plazo vencido se rechaza, **sin que ning
 cliente haya escrito un cambio de fase entre ambas**. Si no se puede expresar,
 `research.md` D1 cae y hay que replantear el cierre antes de seguir.
 
+## Advertencia: los tests de reglas vacían el emulador
+
+`tests/rules/` llama a `clearFirestore()` en cada `beforeEach`, que **borra toda la base
+del emulador**, no solo lo que el test escribió. Es lo correcto para aislar tests, pero
+tiene una consecuencia práctica:
+
+```bash
+npm run seed        # siembra el cuestionario de ejemplo
+npm run test:rules  # ...y esto lo borra
+npm run seed        # hay que volver a sembrar antes de jugar a mano
+```
+
+El orden que funciona es **primero los tests, después la siembra**. Si al abrir la
+aplicación la sala aparece sin cuestionario, es casi siempre esto.
+
 ## Escenario 1 — Ronda completa sin poder hacer trampa (P1)
 
 Necesita dos navegadores además del presentador: uno en modo normal y otro en ventana

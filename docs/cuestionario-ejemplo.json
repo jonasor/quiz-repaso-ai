@@ -1,0 +1,40 @@
+{
+  "title": "Repaso AI — sesión de ejemplo",
+  "defaultTimeLimitSec": 30,
+  "questions": [
+    {
+      "text": "¿Cuál es la práctica correcta con los permisos de Claude Code?",
+      "options": [
+        "Aceptar todo para no perder tiempo",
+        "Revisar cada permiso y acotarlo al proyecto",
+        "Desactivar los permisos globalmente",
+        "Delegar la decisión al equipo de TI"
+      ],
+      "correctIndex": 1,
+      "teachingNote": "El permiso acotado por proyecto es lo que evita que una sesión toque lo que no debe. Aceptar todo ahorra segundos y cuesta el control.",
+      "timeLimitSec": 45
+    },
+    {
+      "text": "¿Cuándo conviene pedir a un asistente que razone más antes de responder?",
+      "options": [
+        "Siempre, cuesta lo mismo",
+        "Nunca, alarga la respuesta sin mejorarla",
+        "En problemas difíciles de diseño o depuración; en lo simple solo añade tiempo y costo",
+        "Solo si el asistente lo sugiere"
+      ],
+      "correctIndex": 2,
+      "teachingNote": "El razonamiento extendido paga en problemas con varias soluciones plausibles. En una tarea mecánica es puro costo."
+    },
+    {
+      "text": "¿Qué conviene hacer antes de pedir un cambio grande sobre un repositorio ajeno?",
+      "options": [
+        "Pedir el cambio directamente y revisar después",
+        "Entender el código existente y acordar el alcance",
+        "Reescribirlo desde cero para evitar sorpresas",
+        "Delegarlo al autor original"
+      ],
+      "correctIndex": 1,
+      "teachingNote": "Casi todo el desperdicio en cambios grandes viene de no haber acordado el alcance. Entender primero es más rápido que corregir después."
+    }
+  ]
+}

@@ -18,16 +18,38 @@ Lo que sigue está **confirmado** contra la documentación de Firebase:
 - **`existsAfter(X)` es verdadero también cuando `X` ya existía.** No significa "creado en esta operación". Para eso hace falta la pareja `!exists(X) && existsAfter(X)`, porque `exists()` observa el estado previo. Ignorar esto produjo dos fugas que sobrevivieron al primer diseño de D4; ver el contrato de reglas.
 - **Límites de acceso**: 10 llamadas `get()`/`exists()`/`getAfter()`/`existsAfter()` por petición de documento único o de consulta, y 20 por transacción o escritura por lotes, con el límite de 10 aplicando además a cada operación individual. Las llamadas repetidas al mismo documento se cachean y no consumen presupuesto.
 
-Lo que sigue está **pendiente de confirmar contra el emulador**, y es la primera tarea
-de implementación porque el modelo de cierre entero depende de ello:
+**Confirmado contra el emulador el 2026-09-16** por los spikes T011 y T012, 6 tests en
+verde (`tests/rules/deadline.spec.ts` y `tests/rules/server-time.spec.ts`):
 
-- La aritmética de timestamps en reglas. El contrato la expresa con enteros en milisegundos, `request.time.toMillis() < openedAt.toMillis() + timeLimitSec * 1000`, precisamente para no depender de la suma `timestamp + duration`, que es lo que sigue sin confirmarse. El spike debe validar la forma en milisegundos; la de `duration` es opcional.
-- Que `request.resource.data.submittedAt == request.time` sea la forma correcta de obligar a que un campo de tiempo provenga del servidor y no del cliente.
+- **La aritmética de timestamps funciona.** `request.time.toMillis() < resource.data.openedAt.toMillis() + resource.data.timeLimitSec * 1000` es expresión válida en reglas. Una respuesta dentro del plazo se acepta; la misma con el plazo vencido se rechaza **con la ronda todavía en `phase: 'open'` y sin que ningún cliente haya escrito nada para cerrarla**. También se rechaza en el instante exacto del vencimiento. **D1 se sostiene.**
+- **`request.resource.data.submittedAt == request.time` obliga al tiempo del servidor.** Acepta `serverTimestamp()`, y rechaza tanto un `Timestamp.now()` fabricado por el cliente como uno antedatado para simular haber respondido más rápido. **FR-034 queda garantizado por reglas.**
 
-Si alguna de las dos no se sostiene, D1 cae y hay que replantear el cierre. Por eso
-`tasks.md` debe empezar por un spike de reglas contra el emulador, antes de escribir
-UI. No se asume nada de esto como cierto en el código hasta que un test en verde lo
-demuestre, que es lo que exige el Principio IV.
+No hizo falta la forma con `duration`: la aritmética entera en milisegundos basta, así que
+el diseño no depende de esa expresión y no se usa.
+
+**La autoridad del presentador cambió de forma** respecto al contrato durante T010. Ver el
+apartado siguiente.
+
+## D10 — La autoridad del presentador es un custom claim, no un `uid` literal
+
+**Decision**: `isPresenter()` evalúa `request.auth.token.presenter == true`. El claim se
+otorga una sola vez por entorno con `scripts/grant-presenter.ts`, que usa el Admin SDK.
+
+**Rationale**: el contrato fijaba `PRESENTER_UID` como constante literal en las reglas, y
+el riesgo abierto 5 señalaba el problema: `firestore.rules` se despliega tal cual al
+emulador y a producción, así que un `uid` literal obliga a plantillar el archivo por
+entorno o a meter el `uid` de producción dentro de los tests. El claim evita las dos
+cosas y conserva las dos propiedades que el contrato quería:
+
+- **Archivo idéntico en los dos entornos.** No hay plantilla, así que T021 puede seguir leyendo `firestore.rules` como un archivo normal para comparar catálogos.
+- **Sin coste de accesos.** Era la objeción del contrato al documento de autoridad, y aquí no aplica: el claim viaja en el token, no exige `get()`.
+- **Infalsificable por el participante.** Los custom claims los firma el Admin SDK dentro del token; un cliente no puede concedérselos. Un test lo comprueba con un contexto anónimo que declara `presenter: false` en su propio payload.
+
+**Alternatives considered**:
+
+- *`uid` literal más plantilla por entorno*: obliga a generar `firestore.rules`, lo que rompe que sea un único artefacto versionado y complica el test de sincronización de catálogos.
+- *`uid` literal y los tests usando el de producción*: acopla la suite a una cuenta real y mete ese `uid` en el repositorio.
+- *Documento `config/presenter`*: es lo que el contrato rechazó, y con razón: añade un `get()` a cada evaluación de `isPresenter()`, que es el predicado más usado de todo el archivo.
 
 ## D1 — El cierre de una pregunta es aritmética de timestamps, no una acción
 
@@ -279,8 +301,8 @@ respondí yo.
 
 ## Riesgos abiertos que pasan a tasks.md
 
-1. **La aritmética de timestamps en reglas no está confirmada.** Es el primer spike, y de él depende D1.
+1. ~~La aritmética de timestamps en reglas no está confirmada.~~ **Resuelto** el 2026-09-16 por T011 y T012. D1 se sostiene.
 2. **Contención de escritura sobre el contador de la ronda.** El tope dejó de ser blando al atar la entrada con `getAfter()` (D4), pero el contador concentra escrituras en un documento. Hay que medir la entrada en ráfaga contra el emulador y ajustar el retroceso exponencial.
 3. **La corrección del puntaje no la verifica nadie más que el presentador.** Registrado en Complexity Tracking; es concesión sancionada por la constitución.
 4. **Ocupación del cupo con identidades anónimas fabricadas.** Aceptada por baja probabilidad en una sesión presencial, no cerrada por el diseño (D4). Revisar si el uso deja de ser presencial.
-5. **El alta del presentador y la inyección de `PRESENTER_UID`** no estaban resueltas. `firestore.rules` es un único artefacto que va al emulador y a producción, así que un literal obliga a que los tests usen el mismo `uid` que la cuenta real, o a plantillar las reglas por entorno. Es prerrequisito de toda la suite de reglas del presentador.
+5. ~~El alta del presentador y la inyección de `PRESENTER_UID`.~~ **Resuelto** por D10: custom claim en vez de literal. Texto original: **El alta del presentador y la inyección de `PRESENTER_UID`** no estaban resueltas. `firestore.rules` es un único artefacto que va al emulador y a producción, así que un literal obliga a que los tests usen el mismo `uid` que la cuenta real, o a plantillar las reglas por entorno. Es prerrequisito de toda la suite de reglas del presentador.

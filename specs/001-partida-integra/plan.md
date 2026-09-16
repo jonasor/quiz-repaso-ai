@@ -33,7 +33,9 @@ reglas, y está registrada en Complexity Tracking.
 
 **Language/Version**: TypeScript 5.x, ES2022
 
-**Primary Dependencies**: React 18, Vite 5, Firebase JS SDK 10 (Firestore, Auth). App Check queda **diferido** a Polish: su amenaza —ocupar el cupo con identidades anónimas fabricadas— se **acepta por baja probabilidad** en una sesión presencial, no queda cerrada por el diseño. Ver D4 en research.md.
+**Primary Dependencies**: React 18, Vite 8, Firebase JS SDK 12 (Firestore, Auth), Vitest 5. App Check queda **diferido** a Polish: su amenaza —ocupar el cupo con identidades anónimas fabricadas— se **acepta por baja probabilidad** en una sesión presencial, no queda cerrada por el diseño. Ver D4 en research.md.
+
+**Desviación de versiones respecto a la redacción original del plan**, decidida al instalar: este apartado decía Vite 5 y Firebase SDK 10. La instalación de Firebase 10 arrastraba **10 vulnerabilidades en dependencias de producción**, una de severidad alta, todas dentro de `@firebase/firestore` y `@firebase/auth` —precisamente los paquetes de los que depende la seguridad de esta feature— y todas resueltas en Firebase 12. Vite y Vitest subieron por la misma razón y porque sus versiones actuales ofrecen la configuración de proyectos separados que el Principio III necesita. Estado tras la actualización: **0 vulnerabilidades en producción**; quedan 2 moderadas transitivas de `firebase-admin`, que es dependencia de desarrollo usada a mano una sola vez por `scripts/grant-presenter.ts`.
 
 **Storage**: Cloud Firestore, plan Spark gratuito. Sin Cloud Functions y sin backend propio.
 

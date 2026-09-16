@@ -37,16 +37,16 @@ ven hasta que alguien las busca a propósito.
 
 **Purpose**: Inicialización del proyecto y del entorno de pruebas
 
-- [ ] T001 Crear la estructura de directorios de plan.md: `src/domain/`, `src/data/`, `src/ui/player/`, `src/ui/presenter/`, `src/ui/shared/`, `tests/domain/`, `tests/rules/`
-- [ ] T002 Inicializar proyecto Vite 5 + React 18 + TypeScript 5 con `package.json` y `vite.config.ts`
-- [ ] T003 [P] Añadir Firebase JS SDK 10 y crear `src/data/firebase.ts` vacío con la firma de inicialización
-- [ ] T004 [P] Crear `firebase.json` con Hosting y los emuladores de Firestore y Auth, y `firestore.indexes.json` vacío
-- [ ] T005 [P] Configurar Vitest en `vitest.config.ts` con dos proyectos separados: `domain` (sin emulador, sin red) y `rules` (exige emulador)
-- [ ] T006 [P] Configurar TypeScript en modo `strict` en `tsconfig.json`
-- [ ] T007 [P] Configurar linting y formato en `eslint.config.js` y `.prettierrc`
-- [ ] T008 Añadir en `package.json` los scripts que quickstart.md exige: `typecheck`, `test:domain`, `test:rules`, `dev`, `build`
-- [ ] T009 Crear el arnés de `tests/rules/helpers.ts` con `@firebase/rules-unit-testing`: contextos para presentador autenticado, participante anónimo y sin autenticar
-- [ ] T010 Dar de alta la cuenta del presentador en Firebase Auth (email/contraseña, creada a mano en la consola), obtener su `uid` y **resolver cómo se inyecta `PRESENTER_UID` en `firestore.rules`**: el mismo archivo se despliega al emulador y a producción, así que hay que decidir entre plantillar las reglas por entorno o fijar por convención el `uid` que usan los tests. Documentar la decisión en `quickstart.md`. **Bloquea T019 y toda la suite de reglas del presentador**: sin esto, `isPresenter()` no se puede probar contra nada
+- [X] T001 Crear la estructura de directorios de plan.md: `src/domain/`, `src/data/`, `src/ui/player/`, `src/ui/presenter/`, `src/ui/shared/`, `tests/domain/`, `tests/rules/`
+- [X] T002 Inicializar proyecto Vite 5 + React 18 + TypeScript 5 con `package.json` y `vite.config.ts`
+- [X] T003 [P] Añadir Firebase JS SDK 10 y crear `src/data/firebase.ts` vacío con la firma de inicialización
+- [X] T004 [P] Crear `firebase.json` con Hosting y los emuladores de Firestore y Auth, y `firestore.indexes.json` vacío
+- [X] T005 [P] Configurar Vitest en `vitest.config.ts` con dos proyectos separados: `domain` (sin emulador, sin red) y `rules` (exige emulador)
+- [X] T006 [P] Configurar TypeScript en modo `strict` en `tsconfig.json`
+- [X] T007 [P] Configurar linting y formato en `eslint.config.js` y `.prettierrc`
+- [X] T008 Añadir en `package.json` los scripts que quickstart.md exige: `typecheck`, `test:domain`, `test:rules`, `dev`, `build`
+- [X] T009 Crear el arnés de `tests/rules/helpers.ts` con `@firebase/rules-unit-testing`: contextos para presentador autenticado, participante anónimo y sin autenticar
+- [X] T010 Dar de alta la cuenta del presentador en Firebase Auth (email/contraseña, creada a mano en la consola), obtener su `uid` y **resolver cómo se inyecta `PRESENTER_UID` en `firestore.rules`**: el mismo archivo se despliega al emulador y a producción, así que hay que decidir entre plantillar las reglas por entorno o fijar por convención el `uid` que usan los tests. Documentar la decisión en `quickstart.md`. **Bloquea T019 y toda la suite de reglas del presentador**: sin esto, `isPresenter()` no se puede probar contra nada
 
 ---
 
@@ -61,30 +61,30 @@ ven hasta que alguien las busca a propósito.
 `research.md` declara la aritmética de plazos como **no confirmada**, y D1 depende de
 ella. Si no se sostiene, el modelo de cierre cambia y cualquier UI escrita antes se tira.
 
-- [ ] T011 SPIKE en `tests/rules/deadline.spec.ts`: demostrar contra el emulador que `request.time.toMillis() < resource.data.openedAt.toMillis() + resource.data.timeLimitSec * 1000` es expresión válida en reglas, que una respuesta dentro del plazo se acepta y que la misma con el plazo vencido se rechaza, **sin que ningún cliente escriba un cambio de fase entre ambas**
-- [ ] T012 SPIKE en `tests/rules/server-time.spec.ts`: demostrar que `request.resource.data.submittedAt == request.time` acepta una escritura hecha con `serverTimestamp()` y rechaza un timestamp fabricado por el cliente
-- [ ] T013 Registrar el resultado de T011 y T012 en la sección *Estado de verificación* de `specs/001-partida-integra/research.md`, moviendo lo confirmado al bloque de arriba. **Si alguno falla, detener e informar antes de seguir**: D1 cae y hay que replantear el cierre
+- [X] T011 SPIKE en `tests/rules/deadline.spec.ts`: demostrar contra el emulador que `request.time.toMillis() < resource.data.openedAt.toMillis() + resource.data.timeLimitSec * 1000` es expresión válida en reglas, que una respuesta dentro del plazo se acepta y que la misma con el plazo vencido se rechaza, **sin que ningún cliente escriba un cambio de fase entre ambas**
+- [X] T012 SPIKE en `tests/rules/server-time.spec.ts`: demostrar que `request.resource.data.submittedAt == request.time` acepta una escritura hecha con `serverTimestamp()` y rechaza un timestamp fabricado por el cliente
+- [X] T013 Registrar el resultado de T011 y T012 en la sección *Estado de verificación* de `specs/001-partida-integra/research.md`, moviendo lo confirmado al bloque de arriba. **Si alguno falla, detener e informar antes de seguir**: D1 cae y hay que replantear el cierre
 
 ### Dominio compartido
 
-- [ ] T014 [P] Crear `src/domain/types.ts` con los tipos del modelo de datos: `Quiz`, `PublicQuestion`, `Solution`, `Round`, `Participant`, `Answer`, `QuestionResult`, `ParticipantScore`, `Podium`
-- [ ] T015 [P] Implementar `src/domain/phases.ts`: `StoredPhase` (`lobby` \| `open` \| `revealed` \| `podium` \| `archived`, **sin `closed`**), `EffectivePhase` (añade `closed`), `canTransition()`, `effectivePhase()`, `remainingMs()` (FR-013, FR-014, FR-019, FR-023, FR-025)
-- [ ] T016 [P] Implementar `src/domain/nickname.ts`: `ADJECTIVES`, `ANIMALS`, `generateNickname(rng)`, `isGeneratable()`, `displayNickname()`, `nicknameDocId()`. El apodo es `{adjective, animal}`, **nunca una cadena compuesta** (FR-002, FR-003, FR-007, FR-008)
-- [ ] T017 [P] Test en `tests/domain/phases.test.ts`: cada transición de la tabla del contrato de reglas se acepta y toda otra combinación se rechaza; `effectivePhase()` devuelve `closed` cuando el almacenado es `open` y el plazo venció; `remainingMs()` nunca es negativo
-- [ ] T018 [P] Test en `tests/domain/nickname.test.ts`: afirmar `ADJECTIVES.length * ANIMALS.length >= 5000` (FR-008 exige dos órdenes de magnitud sobre ~50 participantes), `generateNickname()` determinista con rng inyectado, `isGeneratable()` rechaza texto fuera del catálogo
+- [X] T014 [P] Crear `src/domain/types.ts` con los tipos del modelo de datos: `Quiz`, `PublicQuestion`, `Solution`, `Round`, `Participant`, `Answer`, `QuestionResult`, `ParticipantScore`, `Podium`
+- [X] T015 [P] Implementar `src/domain/phases.ts`: `StoredPhase` (`lobby` \| `open` \| `revealed` \| `podium` \| `archived`, **sin `closed`**), `EffectivePhase` (añade `closed`), `canTransition()`, `effectivePhase()`, `remainingMs()` (FR-013, FR-014, FR-019, FR-023, FR-025)
+- [X] T016 [P] Implementar `src/domain/nickname.ts`: `ADJECTIVES`, `ANIMALS`, `generateNickname(rng)`, `isGeneratable()`, `displayNickname()`, `nicknameDocId()`. El apodo es `{adjective, animal}`, **nunca una cadena compuesta** (FR-002, FR-003, FR-007, FR-008)
+- [X] T017 [P] Test en `tests/domain/phases.test.ts`: cada transición de la tabla del contrato de reglas se acepta y toda otra combinación se rechaza; `effectivePhase()` devuelve `closed` cuando el almacenado es `open` y el plazo venció; `remainingMs()` nunca es negativo
+- [X] T018 [P] Test en `tests/domain/nickname.test.ts`: afirmar `ADJECTIVES.length * ANIMALS.length >= 5000` (FR-008 exige dos órdenes de magnitud sobre ~50 participantes), `generateNickname()` determinista con rng inyectado, `isGeneratable()` rechaza texto fuera del catálogo
 
 ### Reglas: esqueleto y cierre por defecto
 
-- [ ] T019 Crear `firestore.rules` con los predicados del contrato —`isPresenter()`, `isAnon()`, `isOwner()`, `round()`, `withinDeadline()`, `inCatalog()`—, la constante literal `PRESENTER_UID`, las listas literales `ADJECTIVES` y `ANIMALS`, y el cierre `match /{document=**} { allow read, write: if false; }`
-- [ ] T020 Test en `tests/rules/closed-by-default.spec.ts`: denegación 14, ninguna lectura ni escritura es posible sin autenticar, y ninguna ruta no declarada admite nada
-- [ ] T021 Test en `tests/rules/catalog-sync.spec.ts`: leer `firestore.rules` y afirmar que sus listas `ADJECTIVES` y `ANIMALS` coinciden elemento a elemento con las de `src/domain/nickname.ts`. Una divergencia silenciosa rompería FR-054 o bloquearía entradas legítimas
+- [X] T019 Crear `firestore.rules` con los predicados del contrato —`isPresenter()`, `isAnon()`, `isOwner()`, `round()`, `withinDeadline()`, `inCatalog()`—, la constante literal `PRESENTER_UID`, las listas literales `ADJECTIVES` y `ANIMALS`, y el cierre `match /{document=**} { allow read, write: if false; }`
+- [X] T020 Test en `tests/rules/closed-by-default.spec.ts`: denegación 14, ninguna lectura ni escritura es posible sin autenticar, y ninguna ruta no declarada admite nada
+- [X] T021 Test en `tests/rules/catalog-sync.spec.ts`: leer `firestore.rules` y afirmar que sus listas `ADJECTIVES` y `ANIMALS` coinciden elemento a elemento con las de `src/domain/nickname.ts`. Una divergencia silenciosa rompería FR-054 o bloquearía entradas legítimas
 
 ### Infraestructura de datos
 
-- [ ] T022 Implementar `src/data/firebase.ts`: inicialización y autenticación anónima con persistencia. **Sin App Check**: su amenaza —una persona fabrica identidades anónimas que entran legítimamente y ocupan el cupo— se acepta por baja probabilidad en una sesión presencial, **no la cierra el contador exacto de D4**. Lo que se difiere es su costo —tokens de depuración en el emulador y un proveedor sin decidir— fuera de la fase que bloquea todas las historias
-- [ ] T023 [P] Implementar `src/data/mappers.ts`: traducción entre documentos de Firestore y los tipos de `src/domain/types.ts`, en ambos sentidos
-- [ ] T024 Crear `scripts/seed-emulator.ts` que siembre un cuestionario de ejemplo partido en `questions/` y `solutions/`, para que US1 sea demostrable sin depender de US3 (FR-020)
-- [ ] T025 Verificación mecánica del Principio III: añadir al script `test:domain` una comprobación de que `grep -r "firebase" src/domain/` no devuelve nada
+- [X] T022 Implementar `src/data/firebase.ts`: inicialización y autenticación anónima con persistencia. **Sin App Check**: su amenaza —una persona fabrica identidades anónimas que entran legítimamente y ocupan el cupo— se acepta por baja probabilidad en una sesión presencial, **no la cierra el contador exacto de D4**. Lo que se difiere es su costo —tokens de depuración en el emulador y un proveedor sin decidir— fuera de la fase que bloquea todas las historias
+- [X] T023 [P] Implementar `src/data/mappers.ts`: traducción entre documentos de Firestore y los tipos de `src/domain/types.ts`, en ambos sentidos
+- [X] T024 Crear `scripts/seed-emulator.ts` que siembre un cuestionario de ejemplo partido en `questions/` y `solutions/`, para que US1 sea demostrable sin depender de US3 (FR-020)
+- [X] T025 Verificación mecánica del Principio III: añadir al script `test:domain` una comprobación de que `grep -r "firebase" src/domain/` no devuelve nada
 
 **Checkpoint**: Spike resuelto, dominio compartido probado, reglas cerradas por defecto. Las historias pueden empezar.
 

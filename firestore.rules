@@ -1,18 +1,122 @@
 rules_version = '2';
 
-// Estado inicial: todo cerrado.
+// Reglas de la partida. Contrato: specs/001-partida-integra/contracts/firestore-rules.md
 //
-// Las reglas reales de esta feature las construyen las tareas T018, T025,
-// T027, T029, T031, T034 y T037 de specs/001-partida-integra/tasks.md, cada
-// una con sus tests, según contracts/firestore-rules.md.
+// ESTADO: fase Foundational (T019). Contiene los predicados, el catálogo de apodos,
+// las reglas de respuesta ya validadas por los spikes T011 y T012, y el cierre por
+// defecto. Las reglas por colección las añaden T026, T028, T030, T032, T035 y T038,
+// cada una con sus tests.
 //
-// El Principio IV de la constitución prohíbe modificar este archivo sin
-// modificar tests/rules/. Cerrar por defecto es el punto de partida correcto:
-// cada permiso que se abra a partir de aquí tiene que justificarse con su
-// test de autorización, y cada denegación del catálogo con el suyo.
+// Principio IV: este archivo no se modifica sin modificar tests/rules/.
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ---------- Principales ----------
+
+    function isAnon() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    // D10: la autoridad del presentador es un custom claim, no un uid literal.
+    // Así este archivo es idéntico en el emulador y en producción, no cuesta
+    // ningún get(), y un cliente no puede concedérselo.
+    function isPresenter() {
+      return request.auth != null && request.auth.token.presenter == true;
+    }
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // ---------- Catálogo de apodos ----------
+    //
+    // GENERADO desde src/domain/nickname.ts. No editar a mano.
+    // tests/rules/catalog-sync.spec.ts falla si las dos copias divergen: una
+    // divergencia silenciosa rompería FR-054 o dejaría fuera entradas legítimas.
+
+      function ADJECTIVES() {
+        return [
+        'Astuto', 'Valiente', 'Sereno', 'Curioso', 'Ágil', 'Sabio', 'Noble', 'Audaz', 'Tenaz',
+        'Risueño', 'Brioso', 'Cordial', 'Diestro', 'Esbelto', 'Fiel', 'Gentil', 'Hábil',
+        'Intrépido', 'Jovial', 'Leal', 'Lúcido', 'Magnánimo', 'Nítido', 'Óptimo', 'Paciente',
+        'Pícaro', 'Prudente', 'Rápido', 'Recio', 'Robusto', 'Sagaz', 'Sincero', 'Sobrio',
+        'Solemne', 'Sutil', 'Templado', 'Terco', 'Tierno', 'Tranquilo', 'Vivaz', 'Zumbón',
+        'Alegre', 'Amable', 'Animoso', 'Apacible', 'Ardiente', 'Atento', 'Aviado', 'Bravo',
+        'Cálido', 'Campante', 'Cauto', 'Certero', 'Claro', 'Colosal', 'Constante', 'Discreto',
+        'Dócil', 'Enérgico', 'Errante', 'Firme', 'Franco', 'Fresco', 'Garboso', 'Grácil',
+        'Grato', 'Humilde', 'Ilustre', 'Impávido', 'Íntegro', 'Justo', 'Ligero', 'Locuaz',
+        'Luminoso'
+        ];
+      }
+
+      function ANIMALS() {
+        return [
+        'Zorro', 'Lince', 'Búho', 'Tejón', 'Halcón', 'Nutria', 'Erizo', 'Ciervo', 'Jabalí',
+        'Lobo', 'Garza', 'Mirlo', 'Tucán', 'Colibrí', 'Pelícano', 'Cormorán', 'Flamenco',
+        'Ibis', 'Quetzal', 'Jilguero', 'Ruiseñor', 'Alondra', 'Cernícalo', 'Águila', 'Puma',
+        'Ocelote', 'Coatí', 'Tapir', 'Capibara', 'Armadillo', 'Perezoso', 'Mono', 'Tucuxi',
+        'Delfín', 'Marsopa', 'Foca', 'Morsa', 'Narval', 'Beluga', 'Orca', 'Manatí', 'Dugongo',
+        'Pingüino', 'Frailecillo', 'Cigüeña', 'Grulla', 'Avestruz', 'Emú', 'Casuario', 'Kiwi',
+        'Loro', 'Guacamayo', 'Cacatúa', 'Periquito', 'Canario', 'Gorrión', 'Golondrina',
+        'Vencejo', 'Abejaruco', 'Martín', 'Oropéndola', 'Estornino', 'Urraca', 'Arrendajo',
+        'Cuervo', 'Grajo', 'Chova', 'Trepador', 'Agateador', 'Herrerillo', 'Carbonero',
+        'Reyezuelo', 'Petirrojo', 'Zarcero'
+        ];
+      }
+
+    // Valida el apodo como dos campos, no como cadena a analizar. Es lo que hace
+    // imposible que un participante escriba texto arbitrario (FR-006, FR-054).
+    function inCatalog(d) {
+      return d.adjective in ADJECTIVES() && d.animal in ANIMALS();
+    }
+
+    // ---------- Ronda ----------
+
+    function round(r) {
+      return get(/databases/$(database)/documents/rounds/$(r)).data;
+    }
+
+    // El instante de cierre es dato derivado de openedAt y timeLimitSec, ambos del
+    // servidor. Nadie lo ejecuta (FR-015). Confirmado por el spike T011.
+    function withinDeadline(r) {
+      return request.time.toMillis()
+           < round(r).openedAt.toMillis() + round(r).timeLimitSec * 1000;
+    }
+
+    match /rounds/{r} {
+      allow get: if request.auth != null;
+      allow create, update: if isPresenter();
+      allow delete: if false;
+
+      match /answers/{answerId} {
+        // Validado por los spikes T011 y T012.
+        allow create: if isAnon()
+          && answerId == request.auth.uid + '_' + string(round(r).currentIndex)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.questionIndex == round(r).currentIndex
+          && round(r).phase == 'open'
+          && withinDeadline(r)
+          && request.resource.data.submittedAt == request.time
+          && request.resource.data.optionIndex is int
+          && request.resource.data.optionIndex >= 0
+          && request.resource.data.keys().hasOnly(
+               ['uid','questionIndex','optionIndex','submittedAt']);
+
+        allow read: if resource.data.uid == request.auth.uid || isPresenter();
+
+        // La ausencia de update y delete es lo que hace cumplir FR-027 y FR-028
+        // sin ninguna condición adicional.
+        allow update, delete: if false;
+      }
+    }
+
+    // ---------- Cierre por defecto ----------
+    //
+    // Todo lo no declarado arriba está denegado. Cada permiso que se abra a partir
+    // de aquí llega con su test de autorización, y cada denegación con el suyo.
+
     match /{document=**} {
       allow read, write: if false;
     }
