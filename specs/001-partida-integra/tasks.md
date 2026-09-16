@@ -216,16 +216,17 @@ ella. Si no se sostiene, el modelo de cierre cambia y cualquier UI escrita antes
 ## Phase 7: Polish & Cross-Cutting Concerns
 
 - [ ] T091 Verificar el Principio VI: `npm run build` y comprobar que `dist/` no contiene el texto de ninguna respuesta correcta ni nota pedagógica
-- [ ] T092 Verificar FR-055 —que la vinculación apodo↔persona sea imposible incluso para quien administra el sistema— recorriendo el esquema de `data-model.md` y confirmando que **ningún documento admite un campo de texto libre** proveniente de un participante: el apodo va partido en `adjective` y `animal`, ambos acotados al catálogo por reglas (SC-008)
-- [ ] T093 [P] Evaluar App Check con el proveedor reCAPTCHA v3, que es el gratuito en el plan Spark. Activarlo si la medición de T094 o una prueba en sala lo aconsejan, y **obligatoriamente si el uso deja de ser presencial** —sesiones remotas, enlace distribuido fuera de la sala, o participantes que no se ven entre sí—, porque ahí decae la baja probabilidad con la que D4 acepta la amenaza. Resolver los tokens de depuración para que no bloquee la suite de reglas en local
-- [ ] T094 Medir el presupuesto real de SC-006 según el procedimiento de `specs/001-partida-integra/quickstart.md`: correr una ronda completa contra el emulador, contar lecturas y escrituras en su UI, extrapolar a 50 participantes y comparar con los límites diarios del plan Spark
-- [ ] T095 Actualizar la estimación de D8 en `research.md` con la medición de T094, sustituyendo las cifras estimadas por las reales
-- [ ] T096 **Medir la latencia de revelación** con un script en `scripts/measure-reveal-fanout.ts`: abrir 50 suscripciones simultáneas al documento de ronda contra el emulador, revelar una pregunta y medir el retardo hasta que la última recibe el agregado. SC-002 exige menos de 2 segundos y ninguna tarea lo verificaba
-- [ ] T097 [P] Accesibilidad en `src/ui/shared/`: distinguir las opciones por **forma además de color**, como ya hacía el prototipo, para que la proyección en sala no dependa de la percepción del color
-- [ ] T098 [P] Estados de error y vacío en `src/ui/`: pérdida de conexión, sala llena, ronda archivada y cuestionario sin publicar
-- [ ] T099 Añadir al script `test:domain` una comprobación que falle si la columna *dónde vive* de la tabla de validaciones de `data-model.md` contiene la palabra "Cliente": una invariante que vive en el cliente es una violación del Principio I, y las tres que encontró la revisión del diseño no se vieron hasta buscarlas a propósito
-- [ ] T100 Ejecutar los tres quality gates de la constitución en verde: `npm run typecheck`, `npm run test:domain`, `npm run test:rules`
-- [ ] T101 Ejecutar los cuatro escenarios de `quickstart.md` de principio a fin, incluidas las verificaciones manuales de integridad de la consola (FR-053, SC-003, SC-007, SC-009)
+- [ ] T092 Verificar FR-055 —que la vinculación apodo↔persona sea imposible incluso para quien administra el sistema— recorriendo el esquema de `data-model.md` y confirmando que **ningún documento admite un campo de texto libre** proveniente de un participante: el apodo va partido en `adjective` y `animal`, ambos acotados al catálogo por reglas (SC-008) Y verificar FR-011 en el mismo recorrido: que el tope se haga cumplir **sin ningún campo ni lectura que reconozca un dispositivo o una persona**, de modo que la barrera de cupo no sea una vía de identificación (FR-011)
+- [ ] T093 Verificar los dos requisitos negativos que nada más comprueba: que no exista ninguna ruta de código ni de UI que ofrezca recuperación de identidad entre dispositivos (FR-005), y que no exista forma de avanzar de fase que no pase por el presentador, es decir ningún modo asincrónico ni de práctica individual (FR-025). Son requisitos de **ausencia**: su riesgo no es implementarlos mal, es que alguien los añada más adelante sin notar que están prohibidos
+- [ ] T094 [P] Evaluar App Check con el proveedor reCAPTCHA v3, que es el gratuito en el plan Spark. Activarlo si la medición de T095 o una prueba en sala lo aconsejan, y **obligatoriamente si el uso deja de ser presencial** —sesiones remotas, enlace distribuido fuera de la sala, o participantes que no se ven entre sí—, porque ahí decae la baja probabilidad con la que D4 acepta la amenaza. Resolver los tokens de depuración para que no bloquee la suite de reglas en local
+- [ ] T095 Medir el presupuesto real de SC-006 según el procedimiento de `specs/001-partida-integra/quickstart.md`: correr una ronda completa contra el emulador, contar lecturas y escrituras en su UI, extrapolar a 50 participantes y comparar con los límites diarios del plan Spark
+- [ ] T096 Actualizar la estimación de D8 en `research.md` con la medición de T095, sustituyendo las cifras estimadas por las reales
+- [ ] T097 **Medir la latencia de revelación** con un script en `scripts/measure-reveal-fanout.ts`: abrir 50 suscripciones simultáneas al documento de ronda contra el emulador, revelar una pregunta y medir el retardo hasta que la última recibe el agregado. SC-002 exige menos de 2 segundos y ninguna tarea lo verificaba
+- [ ] T098 [P] Accesibilidad en `src/ui/shared/`: distinguir las opciones por **forma además de color**, como ya hacía el prototipo, para que la proyección en sala no dependa de la percepción del color
+- [ ] T099 [P] Estados de error y vacío en `src/ui/`: pérdida de conexión, sala llena, ronda archivada y cuestionario sin publicar
+- [ ] T100 Añadir al script `test:domain` una comprobación que falle si la columna *dónde vive* de la tabla de validaciones de `data-model.md` contiene la palabra "Cliente": una invariante que vive en el cliente es una violación del Principio I, y las tres que encontró la revisión del diseño no se vieron hasta buscarlas a propósito
+- [ ] T101 Ejecutar los tres quality gates de la constitución en verde: `npm run typecheck`, `npm run test:domain`, `npm run test:rules`
+- [ ] T102 Ejecutar los cuatro escenarios de `quickstart.md` de principio a fin, incluidas las verificaciones manuales de integridad de la consola (FR-053, SC-003, SC-007, SC-009)
 
 ---
 
@@ -254,7 +255,7 @@ ella. Si no se sostiene, el modelo de cierre cambia y cualquier UI escrita antes
 - Foundational: T014 a T018 en paralelo entre sí, pero todos después de T013
 - US1: los tests de reglas de rutas distintas —T027, T029, T031, T033, T034, T036, T037, T039, T040— en paralelo una vez escrita su regla. Los módulos de dominio T041 a T046 en paralelo entre sí. Las pantallas independientes T056 a T058 en paralelo
 - US3 puede desarrollarse **en paralelo con US1** por otra persona, porque no comparte archivos con ella salvo `src/data/`
-- Las dos mediciones, T051 y T096, no son paralelizables entre sí con el resto: necesitan el emulador sin otra carga encima para que el dato valga
+- Las dos mediciones, T051 y T097, no son paralelizables entre sí con el resto: necesitan el emulador sin otra carga encima para que el dato valga
 
 ---
 
@@ -315,7 +316,7 @@ escrita antes se tira. Detener e informar si falla, en lugar de improvisar un su
 ### Lo que no se puede aplazar a Polish
 
 Las mediciones de SC-001 y SC-002 tampoco son polish del todo: T051 vive en US1 porque
-su resultado puede cambiar el diseño, mientras que T096 sí puede esperar, porque medir la
+su resultado puede cambiar el diseño, mientras que T097 sí puede esperar, porque medir la
 latencia de revelación no cambia ninguna decisión, solo confirma o desmiente un número.
 
 Las garantías de integridad y anonimato **no son polish**. Viven en las reglas de US1 y

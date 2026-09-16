@@ -178,6 +178,14 @@ firebase.json                # Hosting + emuladores
 tests/
 ├── domain/                  # Vitest, sin emulador
 └── rules/                   # @firebase/rules-unit-testing, exige emulador
+
+scripts/                     # Herramientas de desarrollo, fuera del bundle
+├── seed-emulator.ts         # Siembra un cuestionario para poder demostrar US1 sin US3
+├── measure-join-burst.ts    # Riesgo abierto 2 y SC-001
+└── measure-reveal-fanout.ts # SC-002
+
+docs/
+└── cuestionario-ejemplo.json  # Plantilla para quien prepara contenido
 ```
 
 **Structure Decision**: Proyecto único, sin división frontend/backend, porque no hay
