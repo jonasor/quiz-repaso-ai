@@ -267,7 +267,38 @@ lecturas, y a lo largo de la ronda suman aproximadamente `preguntas² × aforo /
 prototipo, ~10.500. Sigue holgado frente al límite diario de Spark, pero el número
 crece rápido y conviene medirlo antes de defender SC-006 con un cuestionario largo.
 
-**Estas cifras son una estimación de diseño, no una medición.** El desglose asume 3
+**Medición de T095** (`scripts/measure-round-budget.ts`), sustituye a la estimación. Una
+ronda real con el código de la aplicación contra el emulador: 50 participantes, cada uno
+con su cliente y las mismas suscripciones que abre su pantalla, y 10 preguntas.
+
+| Concepto | Lecturas |
+|---|---|
+| Eventos de suscripción entregados a participantes y presentador | 6.302 |
+| — de ellos, reparto del contador durante la entrada | 2.500 |
+| Lecturas puntuales del presentador (calificación, conteos, pantalla) | 1.812 |
+| Lecturas de reglas (`get`/`exists`/`getAfter`, facturadas como lectura) | 1.885 |
+| Lecturas dentro de transacciones | 184 |
+| **Total por ronda** | **10.183** |
+| **Escrituras por ronda** | **1.234** |
+
+Frente a la cuota diaria de Spark —50.000 lecturas y 20.000 escrituras—, caben **4 rondas
+de ese tamaño al día**. Las lecturas son el recurso que limita: con las escrituras cabrían
+16. La estimación original (≈6.000 lecturas, ≈1.600 escrituras) se quedó corta en
+lecturas por dos partidas que no contemplaba: las lecturas que hacen las propias reglas y
+el reparto del contador.
+
+**El reparto del contador es cuadrático en el aforo.** `participantCount` vive en el
+documento de ronda, que todos observan. Cada entrada genera un evento para cada cliente
+que ya mira la ronda: N² en el peor caso, un 25 % del total con 50 personas. Es la
+partida que más crece: con 80 personas serían 6.400 lecturas solo por la entrada. Si en
+algún momento el presupuesto aprieta, es la primera candidata: mover el contador a un
+documento que solo mira la pantalla de espera.
+
+Sobre SC-006: se cumple a la escala objetivo para el uso previsto —sesiones de
+capacitación, no decenas de rondas diarias—. Con 4 rondas de 50 personas al día, el
+presupuesto de 0 USD se sostiene.
+
+**Estimación de diseño original, conservada como referencia.** El desglose asume 3
 actualizaciones del documento de ronda por pregunta y una escritura de puntaje por
 participante y pregunta, para una ronda de 10 preguntas. `quickstart.md` incluye el procedimiento para medirlo de
 verdad en una ronda de prueba contra el emulador y contra la consola de uso, que es lo
@@ -307,6 +338,24 @@ respondí yo.
 - *Dejar la persistencia offline por defecto*: viola FR-031 por el estado ambiguo descrito, y contradice FR-062, porque el estado "respondido" viviría en el dispositivo.
 - *Reintentar en segundo plano y avisar después*: convierte una ambigüedad momentánea en una contradicción diferida, que es peor en una sesión en vivo.
 
+## Medición de la latencia de revelación (T097)
+
+`scripts/measure-reveal-fanout.ts`: 50 participantes reales, cada uno suscrito a lo que su
+pantalla espera al revelar, todos con respuesta confirmada. El presentador revela y
+califica con el código de la aplicación.
+
+| Momento | Desde pulsar "Revelar" |
+|---|---|
+| Fase `revealed` escrita | 31 ms |
+| Calificación completa escrita (51 documentos) | 690 ms |
+| Último de los 50 recibe el agregado | **690 ms** |
+| Último de los 50 recibe su puntaje | 603 ms |
+
+**SC-002 se cumple con margen**: menos de 2 s con 50 participantes, calificación incluida.
+Los puntajes llegan antes que el agregado porque se escriben primero, y el agregado es la
+marca de "calificada" (ver `gradeCurrentQuestion`). Misma salvedad que la entrada: el
+emulador no reproduce la latencia de red real.
+
 ## Riesgos abiertos que pasan a tasks.md
 
 1. ~~La aritmética de timestamps en reglas no está confirmada.~~ **Resuelto** el 2026-09-16 por T011 y T012. D1 se sostiene.
@@ -331,4 +380,15 @@ respondí yo.
    - **Contador aproximado**: la entrada deja de serializarse sobre un documento, SC-001 se cumple también en ráfaga, y el tope pasa a ser blando y apoyado solo en FR-012. Eso vuelve a abrir la fuga de las denegaciones 17 a 19 y exige reescribir esas reglas y sus tests.
 3. **La corrección del puntaje no la verifica nadie más que el presentador.** Registrado en Complexity Tracking; es concesión sancionada por la constitución.
 4. **Ocupación del cupo con identidades anónimas fabricadas.** Aceptada por baja probabilidad en una sesión presencial, no cerrada por el diseño (D4). Revisar si el uso deja de ser presencial.
+
+   **Evaluación de App Check (T094): no se activa por ahora.** Los criterios de la tarea
+   eran tres, y ninguno lo pide hoy:
+   - *La medición de T095*: no lo aconseja. El presupuesto cabe con 4 rondas al día, y App Check no reduce lecturas legítimas.
+   - *Una prueba en sala*: no se ha hecho. Queda pendiente para la primera sesión real.
+   - *Uso no presencial*: el uso previsto sigue siendo presencial.
+
+   **Se activa obligatoriamente** —proveedor reCAPTCHA v3, gratuito en Spark— en cuanto el
+   enlace se distribuya fuera de la sala o las sesiones pasen a ser remotas. En ese caso
+   hay que resolver los tokens de depuración del emulador, para que no bloqueen
+   `tests/rules/`. Mitigación operativa mientras tanto: FR-012, el ajuste del tope en curso.
 5. ~~El alta del presentador y la inyección de `PRESENTER_UID`.~~ **Resuelto** por D10: custom claim en vez de literal. Texto original: **El alta del presentador y la inyección de `PRESENTER_UID`** no estaban resueltas. `firestore.rules` es un único artefacto que va al emulador y a producción, así que un literal obliga a que los tests usen el mismo `uid` que la cuenta real, o a plantillar las reglas por entorno. Es prerrequisito de toda la suite de reglas del presentador.
