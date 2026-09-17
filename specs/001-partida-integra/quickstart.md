@@ -11,7 +11,7 @@ completado el siguiente, siguiendo las prioridades P1 a P4 del spec.
 ## Requisitos previos
 
 - Node.js 20 o superior
-- Java 11 o superior, que la Firebase Emulator Suite necesita
+- Java 21 o superior, que la Firebase Emulator Suite necesita (firebase-tools rechaza versiones anteriores)
 - Firebase CLI: `npm install -g firebase-tools`
 
 El emulador es **obligatorio** en local. Las reglas nunca se prueban contra producción,
@@ -58,7 +58,7 @@ expresión del plazo sea válida en reglas; ver *Estado de verificación* en
 [research.md](./research.md).
 
 ```bash
-npm run test:rules -- --grep "deadline arithmetic"
+npm run test:rules -- -t "deadline arithmetic"
 ```
 
 Debe demostrar dos cosas contra el emulador: que una respuesta dentro del plazo se
