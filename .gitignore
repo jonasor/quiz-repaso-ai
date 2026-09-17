@@ -40,3 +40,6 @@ dist/
 *.log
 coverage/
 *.tsbuildinfo
+
+# graphify (grafo de conocimiento local)
+graphify-out/
