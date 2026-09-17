@@ -22,7 +22,7 @@ Código, comentarios, specs y mensajes de UI están en español; conserva ese id
 
 ## Comandos
 
-Requiere Node 20+, Java 11+ y `firebase-tools` global. El emulador es obligatorio en local; las reglas nunca se prueban contra producción.
+Requiere Node 20+, Java 21+ y `firebase-tools` global. El emulador es obligatorio en local; las reglas nunca se prueban contra producción.
 
 ```bash
 npm run emulators            # Firestore :8080, Auth :9099, UI :4000 (dejar corriendo)

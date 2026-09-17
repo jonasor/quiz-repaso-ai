@@ -181,7 +181,11 @@ Medido contra el emulador ([research.md, D8](../specs/001-partida-integra/resear
 - Si se agota la cuota, Firestore rechaza operaciones hasta el reinicio: la partida en curso se congela. No programes más sesiones de las que caben en un día.
 - Revisa el consumo real en *Firestore Database → Uso* después de la primera sesión.
 
-Firebase Auth limita también las **altas de cuentas nuevas por dirección IP** por hora. Con toda una sala conectada a la misma red corporativa, todos salen por la misma IP. Quien ya jugó en ese dispositivo reutiliza su identidad y no cuenta como alta nueva, pero si vas a tener varias salas grandes seguidas desde la misma red, revisa los [límites vigentes de Authentication](https://firebase.google.com/docs/auth/limits).
+Firebase Auth limita también las altas de cuentas nuevas a **100 por hora por dirección IP**, y cada participante anónimo nuevo cuenta como una. Con toda una sala conectada a la misma red corporativa, todos salen por la misma IP: dos rondas de 50 personas distintas en la misma hora ya tocan el límite, y a partir de ahí nadie más puede entrar hasta que pase la hora.
+
+- Quien ya jugó en ese dispositivo y navegador reutiliza su identidad y no cuenta como alta nueva.
+- Si vas a tener varias salas grandes seguidas desde la misma red, programa antes de la sesión un aumento temporal del límite de altas desde la consola de Firebase, en la sección de Authentication.
+- La cifra puede cambiar: consulta los [límites vigentes de Authentication](https://firebase.google.com/docs/auth/limits).
 
 ### Publicar cuestionarios
 

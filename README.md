@@ -31,7 +31,7 @@ Si alguien recarga la página, incluido el presentador, vuelve exactamente a don
 | Herramienta | Versión | Para qué |
 |---|---|---|
 | Node.js | 20 o superior | la app y los scripts |
-| Java | 21 | lo necesita el emulador de Firebase |
+| Java | 21 o superior | lo necesita el emulador de Firebase |
 | Firebase CLI | reciente | `npm install -g firebase-tools` |
 
 No necesitas cuenta de Firebase ni credenciales: en local todo corre contra el emulador con el proyecto de demostración `demo-quiz-repaso`.
