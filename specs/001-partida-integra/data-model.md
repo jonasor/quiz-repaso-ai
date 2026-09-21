@@ -277,6 +277,7 @@ unicidad de ronda activa dependía de que el cliente se acordara de archivar la 
 | Una sola ronda activa | Regla, puntero `config/activeRound` atado con `getAfter()` | FR-022 |
 | Reserva de apodo propia, no ajena | Regla, `getAfter(nicknames/{id}).data.uid == uid` | FR-007 |
 | Incremento del contador solo al entrar | Regla, `!exists(P) && existsAfter(P)` | FR-009 |
+| Agregado revelado legible solo en la ronda viva | Regla, `isPresenter() \|\| round(r).active == true` en `results/{n}` | FR-045, FR-051 |
 
 **Ninguna fila dice "Cliente".** Es el criterio con el que esta tabla se revisa: una
 validación cuya columna *dónde vive* nombre al cliente es una violación del Principio I,

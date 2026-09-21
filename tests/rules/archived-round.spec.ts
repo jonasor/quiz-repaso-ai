@@ -70,6 +70,13 @@ describe('ronda archivada (FR-077)', () => {
     await assertFails(getDoc(doc(anon(), 'quizzes', QUIZ, 'solutions', '0')));
   });
 
+  // El agregado es una copia de la solución que sobrevive a la ronda: una vez archivada,
+  // deja de ser público (denegación 25). Vale también para quien jugó esa ronda.
+  it('ya no expone el agregado con la respuesta correcta', async () => {
+    await assertFails(getDoc(doc(anon('p1'), 'rounds', ROUND, 'results', '0')));
+    await assertFails(getDocs(collection(anon('p1'), 'rounds', ROUND, 'results')));
+  });
+
   it('no admite entradas, respuestas, ni reabrirse', async () => {
     await assertFails(joinBatch(anon('p9'), 'p9', 2));
     await assertFails(setDoc(doc(anon(), 'rounds', ROUND, 'answers', 'p1_1'), answer('p1', 1)));

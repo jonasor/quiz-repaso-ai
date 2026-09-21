@@ -52,7 +52,7 @@ bloquearía entradas legítimas.
 | `rounds/{r}/participants/{uid}` | cualquiera autenticado | `isOwner(uid)` con validaciones de entrada | nunca | nunca |
 | `rounds/{r}/nicknames/{nick}` | cualquiera autenticado | `isAnon()` atado a su propia entrada | **nunca** | **nunca** |
 | `rounds/{r}/answers/{uid}_{n}` | `get`: por la ruta, el dueño o `isPresenter()`; `list`: filtrada por su `uid` o `isPresenter()` | `isOwner()` con validaciones de respuesta | **nunca** | **nunca** |
-| `rounds/{r}/results/{n}` | cualquiera autenticado | `isPresenter()` | **nunca** | nunca |
+| `rounds/{r}/results/{n}` | **`isPresenter()`, o cualquiera autenticado mientras la ronda siga activa** | `isPresenter()` | **nunca** | nunca |
 | `rounds/{r}/scores/{uid}` | `isOwner(uid)` por la ruta, o `isPresenter()` | `isPresenter()` | `isPresenter()` | nunca |
 | `rounds/{r}/podium/final` | cualquiera autenticado | `isPresenter()` | `isPresenter()` | nunca |
 | cualquier otra ruta | nunca | nunca | nunca | nunca |
@@ -286,16 +286,18 @@ fallar". Esta tabla es la especificación de `tests/rules/`.
 | 22 | Reservar un apodo adicional ya estando dentro | FR-007 | `deny: extra nickname claim when already joined` |
 | 23 | Crear una ronda activa sin mover el puntero de ronda activa | FR-022 | `deny: round create without activeRound pointer` |
 | 24 | Crear una ronda nueva sin archivar la anterior | FR-022 | `deny: round create without archiving previous` |
+| 25 | Leer `results/{n}` de una ronda archivada | FR-045, FR-051 | `deny: results read after round archived` |
 
-El spec enumera siete; la tabla tiene veinticuatro porque varios de los siete se
+El spec enumera siete; la tabla tiene veinticinco porque varios de los siete se
 descomponen en denegaciones independientes que merecen test propio.
 
-Las diez últimas nacieron de dos revisiones sucesivas del diseño, y su procedencia
-importa porque describe dos errores distintos:
+Las once últimas nacieron de revisiones sucesivas del diseño, y su procedencia
+importa porque describe errores distintos:
 
 - **15 a 19** cubren fugas que existían mientras la unicidad del apodo y el conteo dependían del cliente. Eran defensas únicamente en la interfaz, que es lo que el Principio I prohíbe.
 - **20 a 22** cubren fugas que **sobrevivieron al primer arreglo**. Atar las escrituras con `existsAfter()` a secas no basta, porque también es verdadero para lo que ya existía; hacen falta `!exists() && existsAfter()` para "nace aquí", o verificar el contenido cuando lo que importa es de quién es. La 20 es la más importante de todas las de la tabla: no requería atacante, y con el catálogo en su mínimo se habría manifestado por azar en cerca de una sesión de cada cinco.
 - **23 y 24** mueven a las reglas la última invariante que quedaba en el cliente, la de una sola ronda activa.
+- **25** salió de una auditoría posterior (`docs/auditoria-seguridad.md`). El secreto de la solución se cumplía *dentro* de una ronda, pero `results/{n}` copia `correctIndex` y nunca se borra: al reutilizar un cuestionario, la ronda vieja seguía entregando las respuestas de la nueva. La lección es que una copia derivada necesita su propia condición de lectura, no la del momento en que se escribió.
 
 La lección operativa para `tests/rules/`: por cada condición cruzada que use
 `existsAfter()`, escribir **dos** tests de denegación, no uno. El obvio, con el documento

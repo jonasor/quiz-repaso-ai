@@ -329,7 +329,14 @@ service cloud.firestore {
       // ---------- Resultados, puntajes y podio (T038) ----------
 
       match /results/{n} {
-        allow read: if request.auth != null;
+        // El agregado lleva `correctIndex`: es una copia de la solución que sobrevive a
+        // la ronda. Leerlo se limita a la ronda viva. Sin esta condición, los resultados
+        // de una ronda archivada revelan las respuestas de un cuestionario reutilizado
+        // mientras esas mismas preguntas siguen abiertas en la ronda nueva
+        // (FR-045, FR-051; denegación 25). El presentador sí relee rondas pasadas: es su
+        // debrief (FR-073 a FR-075).
+        allow read: if isPresenter()
+          || (request.auth != null && round(r).active == true);
         // Solo tras cerrar la admisión de respuestas, y solo para la pregunta en curso.
         // Nunca update: revelar dos veces falla la segunda (denegación 13).
         allow create: if isPresenter()
